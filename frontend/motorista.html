@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#0a0c10"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>TMS · Motorista</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --bg:#0a0c10; --surface:#111318; --surface2:#181c23; --surface3:#1e232d;
+      --border:#2a3040; --accent:#3b82f6; --green:#22c55e; --yellow:#eab308;
+      --red:#ef4444; --orange:#f97316; --text:#e2e8f0; --text2:#94a3b8; --text3:#4b5a6e;
+      --mono:'IBM Plex Mono',monospace;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    html,body{height:100%;overflow:hidden;}
+    body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;display:flex;flex-direction:column;}
+
+    /* ── Header ── */
+    .header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .header-logo{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);}
+    .header-driver{font-size:12px;color:var(--text2);text-align:right;}
+    .header-driver strong{display:block;color:var(--text);font-size:13px;}
+    .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;margin-right:4px;animation:blink 1.5s infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* ── Tabs ── */
+    .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+    .tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;font-weight:600;color:var(--text3);border:none;background:transparent;border-bottom:2px solid transparent;transition:all .15s;cursor:pointer;}
+    .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+    .tab-icon{font-size:16px;display:block;margin-bottom:2px;}
+
+    /* ── Content ── */
+    .content{flex:1;overflow-y:auto;overflow-x:hidden;}
+    .tab-content{display:none;height:100%;}
+    .tab-content.active{display:flex;flex-direction:column;}
+
+    /* ── Login screen ── */
+    .login-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+    .login-logo{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--accent);margin-bottom:8px;}
+    .login-sub{font-size:13px;color:var(--text3);margin-bottom:32px;}
+    .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:360px;}
+    .login-title{font-size:16px;font-weight:700;margin-bottom:20px;}
+    .form-group{margin-bottom:14px;}
+    .form-label{display:block;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+    .form-input,.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;padding:12px 14px;outline:none;transition:border-color .15s;-webkit-appearance:none;}
+    .form-input:focus,.form-select:focus{border-color:var(--accent);}
+    .btn-primary{background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;padding:14px;width:100%;cursor:pointer;transition:opacity .15s;}
+    .btn-primary:active{opacity:.8;}
+
+    /* ── Entregas list ── */
+    .page-pad{padding:16px;}
+    .section-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;}
+
+    .delivery-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden;}
+    .delivery-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+    .delivery-card.pendente::before{background:var(--yellow);}
+    .delivery-card.em_rota::before{background:var(--accent);}
+    .delivery-card.entregue::before{background:var(--green);}
+    .delivery-card.devolvido::before{background:var(--red);}
+    .delivery-card.ocorrencia::before{background:var(--orange);}
+
+    .d-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+    .d-num{font-family:var(--mono);font-size:11px;color:var(--text3);}
+    .d-client{font-size:15px;font-weight:700;margin-bottom:2px;}
+    .d-nf{font-size:11px;font-family:var(--mono);color:var(--text3);}
+    .d-addr{font-size:13px;color:var(--text2);margin-bottom:10px;display:flex;align-items:flex-start;gap:6px;}
+    .d-meta{display:flex;gap:10px;font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:12px;}
+
+    .badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);font-weight:700;padding:3px 8px;border-radius:4px;}
+    .badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+    .badge-green{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+    .badge-green::before{background:var(--green);}
+    .badge-blue{background:rgba(59,130,246,.1);color:var(--accent);border:1px solid rgba(59,130,246,.2);}
+    .badge-blue::before{background:var(--accent);}
+    .badge-yellow{background:rgba(234,179,8,.1);color:var(--yellow);border:1px solid rgba(234,179,8,.2);}
+    .badge-yellow::before{background:var(--yellow);}
+    .badge-red{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+    .badge-red::before{background:var(--red);}
+    .badge-orange{background:rgba(249,115,22,.1);color:var(--orange);border:1px solid rgba(249,115,22,.2);}
+    .badge-orange::before{background:var(--orange);}
+
+    .action-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+    .action-btn{border:1px solid var(--border);background:var(--surface2);color:var(--text2);border-radius:8px;padding:8px 4px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;transition:all .15s;}
+    .action-btn:active{opacity:.7;}
+    .action-btn.green{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.1);color:var(--green);}
+    .action-btn.red{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:var(--red);}
+    .action-btn.orange{border-color:rgba(249,115,22,.3);background:rgba(249,115,22,.1);color:var(--orange);}
+
+    /* ── Map ── */
+    #driverMap{width:100%;flex:1;min-height:300px;}
+    .leaflet-container{background:#0d1117 !important;}
+    .leaflet-tile{filter:none !important;}
+    .map-info{padding:12px 16px;background:var(--surface);border-top:1px solid var(--border);font-size:12px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+    .map-info strong{color:var(--accent);font-family:var(--mono);}
+
+    /* ── Ocorrência modal ── */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:900;display:none;align-items:flex-end;justify-content:center;}
+    .modal-backdrop.show{display:flex;}
+    .modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:20px;animation:slideUp .2s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+    .modal-title{font-size:16px;font-weight:700;margin-bottom:16px;}
+    textarea.form-input{resize:none;height:100px;}
+
+    /* ── KPIs ── */
+    .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+    .kpi-val{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1;}
+    .kpi-lbl{font-size:10px;color:var(--text3);margin-top:3px;}
+
+    /* ── Location btn ── */
+    .location-bar{padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+    .location-status{flex:1;font-size:12px;font-family:var(--mono);color:var(--text3);}
+    .btn-location{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+    .btn-location.active{background:var(--green);}
+
+    .empty-state{text-align:center;padding:48px 24px;color:var(--text3);}
+    .empty-icon{font-size:40px;margin-bottom:12px;}
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen" style="display:flex;flex-direction:column;height:100%">
+  <div class="login-screen">
+    <div class="login-logo">TMS</div>
+    <div class="login-sub">Portal do Motorista</div>
+    <div class="login-card">
+      <div class="login-title">Identificação</div>
+      <div class="form-group">
+        <label class="form-label">Seu Nome</label>
+        <input type="text" class="form-input" id="loginNome" placeholder="Ex: Carlos Silva"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Selecione seu Veículo</label>
+        <select class="form-select" id="loginVeiculo">
+          <option value="">Carregando...</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="entrar()">Entrar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- App Screen -->
+<div id="appScreen" style="display:none;flex-direction:column;height:100%">
+  <div class="header">
+    <div class="header-logo">TMS</div>
+    <div class="header-driver">
+      <strong id="headerNome">—</strong>
+      <span><span class="live-dot" id="liveDot"></span><span id="headerVeiculo">—</span></span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('entregas',this)">
+      <span class="tab-icon">📦</span>Entregas
+    </button>
+    <button class="tab" onclick="switchTab('mapa',this)">
+      <span class="tab-icon">🗺</span>Mapa
+    </button>
+    <button class="tab" onclick="switchTab('status',this)">
+      <span class="tab-icon">📊</span>Status
+    </button>
+  </div>
+
+  <div class="content">
+    <!-- Entregas -->
+    <div class="tab-content active" id="tab-entregas">
+      <div class="location-bar">
+        <div class="location-status" id="locationStatus">📍 Localização desativada</div>
+        <button class="btn-location" id="btnLocation" onclick="toggleLocation()">Ativar GPS</button>
+      </div>
+      <div class="page-pad" id="entregasList">
+        <div class="empty-state"><div class="empty-icon">📦</div>Carregando entregas...</div>
+      </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="tab-content" id="tab-mapa" style="height:100%">
+      <div id="driverMap"></div>
+      <div class="map-info">
+        <span id="mapInfo">Selecione uma entrega para ver no mapa</span>
+        <strong id="mapDist">—</strong>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="tab-content" id="tab-status">
+      <div class="page-pad">
+        <div class="section-title">Resumo do Dia</div>
+        <div class="kpi-row" id="kpiRow">
+          <div class="kpi"><div class="kpi-val" id="kTotal">—</div><div class="kpi-lbl">Total</div></div>
+          <div class="kpi"><div class="kpi-val" style="color:var(--green)" id="kEntregue">—</div><div class="kpi-lbl">Entregues</div></div>
+          <div class="kpi"><div class="kpi-val" style="color:var(--yellow)" id="kPendente">—</div><div class="kpi-lbl">Pendentes</div></div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-val" style="color:var(--red)" id="kDevolvido">—</div><div class="kpi-lbl">Devolvidos</div></div>
+          <div class="kpi"><div class="kpi-val" style="color:var(--orange)" id="kOcorrencia">—</div><div class="kpi-lbl">Ocorrências</div></div>
+          <div class="kpi"><div class="kpi-val" style="color:var(--accent)" id="kPeso">—</div><div class="kpi-lbl">Kg total</div></div>
+        </div>
+
+        <div class="section-title" style="margin-top:20px">Progresso</div>
+        <div style="background:var(--surface2);border-radius:10px;overflow:hidden;height:12px;margin-bottom:6px">
+          <div id="progressBar" style="height:100%;background:var(--green);border-radius:10px;transition:width .5s;width:0%"></div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);text-align:center" id="progressLabel">0% concluído</div>
+
+        <div style="margin-top:24px">
+          <button class="btn-primary" onclick="logout()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border)">Sair / Trocar Motorista</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ocorrência -->
+<div class="modal-backdrop" id="modalOcorrencia">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚠️ Registrar Ocorrência</div>
+    <input type="hidden" id="ocorrenciaId"/>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="ocorrenciaTipo">
+        <option value="endereco_nao_encontrado">Endereço não encontrado</option>
+        <option value="cliente_ausente">Cliente ausente</option>
+        <option value="recusou_entrega">Recusou a entrega</option>
+        <option value="produto_avariado">Produto avariado</option>
+        <option value="acesso_negado">Acesso negado</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observação</label>
+      <textarea class="form-input" id="ocorrenciaObs" placeholder="Descreva o problema..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-primary" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);flex:1" onclick="fecharOcorrencia()">Cancelar</button>
+      <button class="btn-primary" style="flex:2" onclick="salvarOcorrencia()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let driverInfo = null;
+let entregas = [];
+let driverMap = null;
+let driverMarker = null;
+let locationInterval = null;
+let locationActive = false;
+let routeMarkers = [];
+
+const statusMap = {
+  pendente:   ['badge-yellow','Pendente'],
+  em_rota:    ['badge-blue','Em Rota'],
+  entregue:   ['badge-green','Entregue'],
+  devolvido:  ['badge-red','Devolvido'],
+  cancelado:  ['badge-red','Cancelado'],
+  ocorrencia: ['badge-orange','Ocorrência'],
+};
+
+// ── Login ─────────────────────────────────────────────────
+async function loadVehicles() {
+  try {
+    const r = await fetch(`${API}/vehicles/`);
+    const vs = await r.json();
+    document.getElementById('loginVeiculo').innerHTML =
+      '<option value="">Selecione...</option>' +
+      vs.map(v=>`<option value="${v.id}" data-placa="${v.placa}" data-modelo="${v.modelo}">${v.placa} — ${v.modelo}</option>`).join('');
+  } catch {
+    document.getElementById('loginVeiculo').innerHTML = '<option value="1">BRA-2E19 — VW Delivery (demo)</option>';
+  }
+}
+
+function entrar() {
+  const nome = document.getElementById('loginNome').value.trim();
+  const sel = document.getElementById('loginVeiculo');
+  const vid = sel.value;
+  if (!nome) { alert('Digite seu nome.'); return; }
+  if (!vid) { alert('Selecione seu veículo.'); return; }
+  const opt = sel.options[sel.selectedIndex];
+  driverInfo = { nome, vehicle_id: parseInt(vid), placa: opt.dataset.placa, modelo: opt.dataset.modelo };
+  document.getElementById('headerNome').textContent = nome;
+  document.getElementById('headerVeiculo').textContent = opt.dataset.placa;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'flex';
+  loadEntregas();
+  initDriverMap();
+}
+
+function logout() {
+  driverInfo = null;
+  stopLocation();
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ── Entregas ──────────────────────────────────────────────
+async function loadEntregas() {
+  try {
+    const r = await fetch(`${API}/deliveries/?status=em_rota`);
+    const all = await r.json();
+    entregas = all.filter(e => {
+      // Tenta encontrar entregas da rota do veículo
+      return true; // Em produção filtrar pela rota do veículo
+    }).slice(0, 20);
+  } catch {
+    entregas = [
+      {id:1,nf_numero:'000001',nome_fantasia:'Mercado Central',endereco:'Av. Paulista, 1000, São Paulo',cidade:'São Paulo',peso_kg:250,volume_m3:1.2,status:'em_rota',lat:-23.561,lng:-46.655,observacao:''},
+      {id:2,nf_numero:'000002',nome_fantasia:'Padaria do João',endereco:'R. Augusta, 500, São Paulo',cidade:'São Paulo',peso_kg:80,volume_m3:0.5,status:'pendente',lat:-23.553,lng:-46.648,observacao:'Entregar antes das 10h'},
+      {id:3,nf_numero:'000003',nome_fantasia:'Farmácia Saúde',endereco:'Al. Santos, 200, São Paulo',cidade:'São Paulo',peso_kg:15,volume_m3:0.1,status:'entregue',lat:-23.558,lng:-46.660,observacao:''},
+    ];
+  }
+  renderEntregas();
+  updateKPIs();
+  updateMapMarkers();
+}
+
+function renderEntregas() {
+  const el = document.getElementById('entregasList');
+  if (!entregas.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div>Nenhuma entrega pendente!</div>';
+    return;
+  }
+
+  el.innerHTML = entregas.map((e,i) => {
+    const [cls,label] = statusMap[e.status] || ['badge-yellow','Pendente'];
+    const concluida = e.status === 'entregue';
+    return `
+    <div class="delivery-card ${e.status}" id="dcard_${e.id}">
+      <div class="d-top">
+        <div>
+          <div class="d-num">Parada ${i+1} · NF ${e.nf_numero}</div>
+          <div class="d-client">${e.nome_fantasia}</div>
+        </div>
+        <span class="badge ${cls}">${label}</span>
+      </div>
+      <div class="d-addr">📍 ${e.endereco}</div>
+      <div class="d-meta">
+        <span>⚖️ ${e.peso_kg||0}kg</span>
+        <span>📦 ${e.volume_m3||0}m³</span>
+        ${e.observacao?`<span>💬 ${e.observacao.slice(0,30)}</span>`:''}
+      </div>
+      ${!concluida ? `
+      <div class="action-btns">
+        <button class="action-btn green" onclick="atualizarStatus(${e.id},'entregue')">✓ Entregue</button>
+        <button class="action-btn red" onclick="atualizarStatus(${e.id},'devolvido')">↩ Devolvido</button>
+        <button class="action-btn orange" onclick="abrirOcorrencia(${e.id})">⚠ Ocorrência</button>
+      </div>` : `<div style="font-size:12px;color:var(--green);font-weight:600">✓ Entrega concluída</div>`}
+    </div>`;
+  }).join('');
+}
+
+async function atualizarStatus(id, status) {
+  const labels = {entregue:'Marcar como entregue?', devolvido:'Marcar como devolvido?'};
+  if (!confirm(labels[status]||'Confirmar?')) return;
+
+  try {
+    if (status === 'entregue') {
+      await fetch(`${API}/deliveries/${id}/concluir`, {method:'PATCH'});
+    } else {
+      await fetch(`${API}/deliveries/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})});
+    }
+  } catch {}
+
+  const e = entregas.find(x=>x.id===id);
+  if (e) e.status = status;
+  renderEntregas();
+  updateKPIs();
+  updateMapMarkers();
+}
+
+function updateKPIs() {
+  const total = entregas.length;
+  const entregue = entregas.filter(e=>e.status==='entregue').length;
+  const pendente = entregas.filter(e=>e.status==='pendente'||e.status==='em_rota').length;
+  const devolvido = entregas.filter(e=>e.status==='devolvido').length;
+  const ocorrencia = entregas.filter(e=>e.status==='ocorrencia').length;
+  const peso = entregas.reduce((s,e)=>s+(e.peso_kg||0),0);
+  const pct = total ? Math.round((entregue/total)*100) : 0;
+
+  document.getElementById('kTotal').textContent = total;
+  document.getElementById('kEntregue').textContent = entregue;
+  document.getElementById('kPendente').textContent = pendente;
+  document.getElementById('kDevolvido').textContent = devolvido;
+  document.getElementById('kOcorrencia').textContent = ocorrencia;
+  document.getElementById('kPeso').textContent = peso.toFixed(0);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${pct}% concluído (${entregue}/${total})`;
+}
+
+// ── Ocorrência ────────────────────────────────────────────
+function abrirOcorrencia(id) {
+  document.getElementById('ocorrenciaId').value = id;
+  document.getElementById('ocorrenciaObs').value = '';
+  document.getElementById('modalOcorrencia').classList.add('show');
+}
+
+function fecharOcorrencia() {
+  document.getElementById('modalOcorrencia').classList.remove('show');
+}
+
+async function salvarOcorrencia() {
+  const id = document.getElementById('ocorrenciaId').value;
+  const tipo = document.getElementById('ocorrenciaTipo').value;
+  const obs = document.getElementById('ocorrenciaObs').value;
+  const descricao = `${tipo.replace(/_/g,' ')}: ${obs}`;
+
+  try {
+    await fetch(`${API}/deliveries/${id}`, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({status:'devolvido', observacao: descricao})
+    });
+  } catch {}
+
+  const e = entregas.find(x=>x.id===parseInt(id));
+  if (e) { e.status='ocorrencia'; e.observacao=descricao; }
+  fecharOcorrencia();
+  renderEntregas();
+  updateKPIs();
+}
+
+// ── Mapa ──────────────────────────────────────────────────
+function initDriverMap() {
+  if (driverMap) return;
+  setTimeout(() => {
+    driverMap = L.map('driverMap', {zoomControl:true}).setView([-23.5505,-46.6333],13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',maxZoom:19}).addTo(driverMap);
+    updateMapMarkers();
+  }, 100);
+}
+
+function updateMapMarkers() {
+  if (!driverMap) return;
+  routeMarkers.forEach(m=>driverMap.removeLayer(m));
+  routeMarkers = [];
+
+  entregas.forEach((e,i) => {
+    if (!e.lat || !e.lng) return;
+    const concluida = e.status === 'entregue';
+    const color = concluida ? '#22c55e' : e.status==='ocorrencia' ? '#f97316' : '#3b82f6';
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="width:30px;height:30px;border-radius:50%;background:${color};border:2px solid rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;box-shadow:0 0 8px ${color}">${i+1}</div>`,
+      iconSize:[30,30],iconAnchor:[15,15]
+    });
+    const m = L.marker([e.lat,e.lng],{icon}).addTo(driverMap)
+      .bindPopup(`<b>${e.nome_fantasia}</b><br>${e.endereco}`);
+    routeMarkers.push(m);
+  });
+
+  if (routeMarkers.length) {
+    const group = L.featureGroup(routeMarkers);
+    driverMap.fitBounds(group.getBounds(), {padding:[30,30]});
+  }
+}
+
+// ── GPS ───────────────────────────────────────────────────
+function toggleLocation() {
+  if (locationActive) stopLocation();
+  else startLocation();
+}
+
+function startLocation() {
+  if (!navigator.geolocation) { alert('GPS não disponível.'); return; }
+  locationActive = true;
+  document.getElementById('btnLocation').textContent = 'GPS Ativo';
+  document.getElementById('btnLocation').classList.add('active');
+
+  navigator.geolocation.getCurrentPosition(pos => updatePosition(pos));
+  locationInterval = setInterval(() => {
+    navigator.geolocation.getCurrentPosition(pos => updatePosition(pos), err => {
+      document.getElementById('locationStatus').textContent = '⚠️ Erro no GPS';
+    });
+  }, 15000);
+}
+
+function stopLocation() {
+  locationActive = false;
+  clearInterval(locationInterval);
+  document.getElementById('btnLocation').textContent = 'Ativar GPS';
+  document.getElementById('btnLocation').classList.remove('active');
+  document.getElementById('locationStatus').textContent = '📍 Localização desativada';
+}
+
+async function updatePosition(pos) {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  const speed = (pos.coords.speed || 0) * 3.6;
+
+  document.getElementById('locationStatus').textContent = `📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+  // Atualiza marcador no mapa
+  if (driverMap) {
+    if (!driverMarker) {
+      const icon = L.divIcon({
+        className:'',
+        html:`<div style="width:16px;height:16px;border-radius:50%;background:#f97316;border:3px solid #fff;box-shadow:0 0 10px #f97316;animation:blink 1s infinite"></div>`,
+        iconSize:[16,16],iconAnchor:[8,8]
+      });
+      driverMarker = L.marker([lat,lng],{icon}).addTo(driverMap).bindPopup('📍 Você está aqui');
+    } else {
+      driverMarker.setLatLng([lat,lng]);
+    }
+  }
+
+  // Envia para API
+  if (driverInfo) {
+    try {
+      await fetch(`${API}/tracking/`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({vehicle_id: driverInfo.vehicle_id, lat, lng, velocidade_kmh: speed})
+      });
+    } catch {}
+  }
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  if (tab === 'mapa') {
+    setTimeout(() => { if(driverMap) driverMap.invalidateSize(); }, 100);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────
+loadVehicles();
+</script>
+</body>
+</html>
