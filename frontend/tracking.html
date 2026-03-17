@@ -105,7 +105,7 @@ function initMap(){
 
 function connectWS(){
   try{
-    ws=new WebSocket('ws://127.0.0.1:8000/tracking/ws/all/live');
+    ws=new WebSocket('wss://tms-production-3fba.up.railway.app/tracking/ws/all/live');
     ws.onopen=()=>{document.getElementById('wsLabel').textContent='AO VIVO';};
     ws.onmessage=e=>{const d=JSON.parse(e.data);onUpdate(d);};
     ws.onclose=()=>{document.getElementById('wsLabel').textContent='OFFLINE';setTimeout(connectWS,3000);};
