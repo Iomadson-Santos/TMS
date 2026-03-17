@@ -1,6 +1,6 @@
 // ── Shared TMS UI ────────────────────────────────────────
 const TMS = {
-  API: 'http://127.0.0.1:8000',
+  API: 'https://tms-production-3fba.up.railway.app',
 
   // Inject sidebar + topbar into page
   initLayout(activePage) {
