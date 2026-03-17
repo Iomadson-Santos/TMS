@@ -487,6 +487,18 @@ function showAutoResult(data,selecionadas,origemLat,origemLng){
 
 async function salvarRotaAuto(){
   const selecionadas=selectedDeliveries.filter(d=>d._selected);
+
+  // Valida capacidade do veículo
+  const vehicleId = parseInt(document.getElementById('autoVehicle').value);
+  const veiculo = vehicles.find(v => v.id === vehicleId);
+  if (veiculo) {
+    const cargaTotal = selecionadas.reduce((s,d) => s + (d.peso_kg||0), 0);
+    if (cargaTotal > veiculo.capacidade_kg) {
+      alert(`⚠️ Carga total (${cargaTotal}kg) excede a capacidade do veículo (${veiculo.capacidade_kg}kg)!\n\nRemova algumas entregas ou escolha outro veículo.`);
+      return;
+    }
+  }
+
   const paradas=autoOptimizedOrder||selecionadas.map((d,i)=>({ordem:i+1,endereco:d.endereco,lat:d._lat||-23.55,lng:d._lng||-46.63,carga_kg:d.peso_kg||0,destinatario:d.nome_fantasia}));
   const body={nome:document.getElementById('autoNomeRota').value||'Rota Automática',vehicle_id:parseInt(document.getElementById('autoVehicle').value)||1,origem_lat:parseFloat(document.getElementById('autoOrigemLat').value)||-23.5505,origem_lng:parseFloat(document.getElementById('autoOrigemLng').value)||-46.6333,origem_endereco:document.getElementById('autoOrigem').value||'Origem',paradas};
   try{

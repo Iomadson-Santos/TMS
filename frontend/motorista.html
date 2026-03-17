@@ -174,7 +174,7 @@
   <div class="content">
     <!-- Entregas -->
     <div class="tab-content active" id="tab-entregas">
-      <div class="location-bar">
+      <div class="location-bar" id="locationBar">
         <div class="location-status" id="locationStatus">📍 Localização desativada</div>
         <button class="btn-location" id="btnLocation" onclick="toggleLocation()">Ativar GPS</button>
       </div>
@@ -328,7 +328,13 @@ async function loadEntregas() {
     driverInfo.route_id = rotaAtiva.id;
     driverInfo.rota_nome = rotaAtiva.nome;
     document.getElementById('headerVeiculo').textContent = `${driverInfo.placa} · ${rotaAtiva.nome}`;
-
+// Mostra botão de iniciar rota se estiver planejada
+    const locationBar = document.getElementById('locationBar');
+    if (rotaAtiva.status === 'planejada') {
+      locationBar.innerHTML = `
+        <div style="flex:1;font-size:13px;color:var(--yellow)">⚠️ Rota ainda não iniciada</div>
+        <button class="btn-location" onclick="iniciarRota(${rotaAtiva.id})">▶ Iniciar Rota</button>`;
+    }
     // Busca as entregas da rota
     const entRes = await fetch(`${TMS.API}/deliveries/rota/${rotaAtiva.id}`);
     entregas = await entRes.json();
@@ -558,6 +564,23 @@ function switchTab(tab, el) {
 }
 
 // ── Init ──────────────────────────────────────────────────
+async function iniciarRota(id) {
+  if (!confirm('Iniciar a rota agora?')) return;
+  try {
+    await fetch(`${TMS.API}/routes/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({status: 'em_andamento'})
+    });
+  } catch {}
+  // Recarrega as entregas
+  await loadEntregas();
+  // Ativa GPS automaticamente
+  startLocation();
+  document.getElementById('locationBar').innerHTML = `
+    <div class="location-status" id="locationStatus">📍 Localização desativada</div>
+    <button class="btn-location" id="btnLocation" onclick="toggleLocation()">Ativar GPS</button>`;
+}
 loadVehicles();
 </script>
 </body>
