@@ -278,11 +278,25 @@ function renderTable(data){
     <td style="font-family:var(--mono)">${r.carga_total_kg}kg</td>
     <td style="font-family:var(--mono)">${r.paradas?.length||0}</td>
     <td style="font-size:11px;color:var(--text3)">${new Date(r.criado_em).toLocaleDateString('pt-BR')}</td>
-    <td><div style="display:flex;gap:6px" onclick="event.stopPropagation()"><button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteRoute(${r.id})">🗑️</button></div></td>
+    <td><div style="display:flex;gap:4px" onclick="event.stopPropagation()">
+      ${r.status==='planejada'?`<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;color:var(--green)" onclick="mudarStatusRota(${r.id},'em_andamento')">▶ Iniciar</button>`:''}
+      ${r.status==='em_andamento'?`<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;color:var(--accent)" onclick="mudarStatusRota(${r.id},'concluida')">✓ Concluir</button>`:''}
+      ${r.status==='planejada'||r.status==='em_andamento'?`<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="mudarStatusRota(${r.id},'cancelada')">✕</button>`:''}
+      <button class="btn btn-danger" style="padding:4px 8px;font-size:11px" onclick="deleteRoute(${r.id})">🗑️</button>
+    </div></td>
   </tr>`).join('');
   document.getElementById('tableFooter').textContent=`Exibindo ${data.length} de ${allRoutes.length} rotas`;
 }
-
+async function mudarStatusRota(id, status){
+  try{
+    await fetch(`${TMS.API}/routes/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    await load();
+  }catch{
+    const r=allRoutes.find(x=>x.id===id);
+    if(r) r.status=status;
+    renderKPIs();filterTable();
+  }
+}
 function initMap(){
   map=L.map('map',{zoomControl:false}).setView([-23.5505,-46.6333],11);
   L.control.zoom({position:'bottomright'}).addTo(map);
