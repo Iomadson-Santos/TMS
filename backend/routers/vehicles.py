@@ -1,10 +1,10 @@
-from core.audit import registrar
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from core.database import get_db
 from models.models import Vehicle
 from schemas.schemas import VehicleCreate, VehicleOut, VehicleUpdate
+from core.audit import registrar
 
 router = APIRouter(prefix="/vehicles", tags=["Veículos"])
 

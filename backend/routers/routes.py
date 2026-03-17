@@ -1,9 +1,9 @@
-from core.audit import registrar
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from typing import List
 from datetime import datetime
+from core.audit import registrar
 import math
 
 from core.database import get_db
