@@ -307,12 +307,32 @@ function logout() {
 // ── Entregas ──────────────────────────────────────────────
 async function loadEntregas() {
   try {
-    const r = await fetch(`${API}/deliveries/?status=em_rota`);
-    const all = await r.json();
-    entregas = all.filter(e => {
-      // Tenta encontrar entregas da rota do veículo
-      return true; // Em produção filtrar pela rota do veículo
-    }).slice(0, 20);
+    // Busca a rota ativa do veículo do motorista
+    const rotasRes = await fetch(`${TMS.API}/routes/`);
+    const rotas = await rotasRes.json();
+    const rotaAtiva = rotas.find(r =>
+      r.vehicle_id === driverInfo.vehicle_id &&
+      (r.status === 'em_andamento' || r.status === 'planejada')
+    );
+
+    if (!rotaAtiva) {
+      document.getElementById('entregasList').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🗺️</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px">Nenhuma rota ativa</div>
+          <div style="font-size:12px">Aguarde o operador atribuir uma rota para este veículo.</div>
+        </div>`;
+      return;
+    }
+
+    driverInfo.route_id = rotaAtiva.id;
+    driverInfo.rota_nome = rotaAtiva.nome;
+    document.getElementById('headerVeiculo').textContent = `${driverInfo.placa} · ${rotaAtiva.nome}`;
+
+    // Busca as entregas da rota
+    const entRes = await fetch(`${TMS.API}/deliveries/rota/${rotaAtiva.id}`);
+    entregas = await entRes.json();
+
   } catch {
     entregas = [
       {id:1,nf_numero:'000001',nome_fantasia:'Mercado Central',endereco:'Av. Paulista, 1000, São Paulo',cidade:'São Paulo',peso_kg:250,volume_m3:1.2,status:'em_rota',lat:-23.561,lng:-46.655,observacao:''},

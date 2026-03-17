@@ -88,3 +88,6 @@ def deletar_entrega(delivery_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Entrega não encontrada")
     db.delete(d)
     db.commit()
+@router.get("/rota/{route_id}", response_model=List[DeliveryOut])
+def entregas_por_rota(route_id: int, db: Session = Depends(get_db)):
+    return db.query(Delivery).filter(Delivery.route_id == route_id).all()
