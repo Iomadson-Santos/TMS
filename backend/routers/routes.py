@@ -111,6 +111,12 @@ def atualizar_rota(route_id: int, data: RouteUpdate, db: Session = Depends(get_d
         if veiculo:
             from models.models import VehicleStatus
             veiculo.status = VehicleStatus.disponivel
+        # Muda todas as entregas pendentes da rota para entregue
+        from models.delivery import Delivery, DeliveryStatus
+        db.query(Delivery).filter(
+            Delivery.route_id == rota.id,
+            Delivery.status == DeliveryStatus.em_rota
+        ).update({Delivery.status: DeliveryStatus.entregue})
 
     db.commit()
     db.refresh(rota)
