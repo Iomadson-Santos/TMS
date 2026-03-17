@@ -1,3 +1,4 @@
+from core.audit import registrar
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -87,6 +88,7 @@ def criar_rota(data: RouteCreate, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(rota)
+    registrar(db, 'criou_rota', 'route', rota.id, f'Rota {rota.nome} criada com {len(data.paradas)} paradas')
     return rota
 
 @router.patch("/{route_id}", response_model=RouteOut)
@@ -120,6 +122,7 @@ def atualizar_rota(route_id: int, data: RouteUpdate, db: Session = Depends(get_d
 
     db.commit()
     db.refresh(rota)
+    registrar(db, 'alterou_status_rota', 'route', rota.id, f'Rota {rota.nome} → {rota.status}')
     return rota
 
 @router.delete("/{route_id}", status_code=204)

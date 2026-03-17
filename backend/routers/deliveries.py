@@ -1,3 +1,4 @@
+from core.audit import registrar
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -47,6 +48,7 @@ def criar_entrega(data: DeliveryCreate, db: Session = Depends(get_db)):
     db.add(d)
     db.commit()
     db.refresh(d)
+    registrar(db, 'criou_entrega', 'delivery', d.id, f'NF {d.nf_numero} — {d.nome_fantasia}')
     return d
 
 @router.patch("/{delivery_id}", response_model=DeliveryOut)
@@ -58,6 +60,7 @@ def atualizar_entrega(delivery_id: int, data: DeliveryUpdate, db: Session = Depe
         setattr(d, campo, valor)
     db.commit()
     db.refresh(d)
+    registrar(db, 'alterou_entrega', 'delivery', d.id, f'NF {d.nf_numero} status atualizado')
     return d
 
 @router.patch("/{delivery_id}/atribuir-rota/{route_id}", response_model=DeliveryOut)
@@ -79,6 +82,7 @@ def concluir_entrega(delivery_id: int, db: Session = Depends(get_db)):
     d.status = DeliveryStatus.entregue
     db.commit()
     db.refresh(d)
+    registrar(db, 'concluiu_entrega', 'delivery', d.id, f'NF {d.nf_numero} entregue')
     return d
 
 @router.delete("/{delivery_id}", status_code=204)
