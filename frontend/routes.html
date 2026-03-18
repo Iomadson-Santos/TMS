@@ -288,14 +288,19 @@ function renderTable(data){
   document.getElementById('tableFooter').textContent=`Exibindo ${data.length} de ${allRoutes.length} rotas`;
 }
 async function mudarStatusRota(id, status){
+  const r=allRoutes.find(x=>x.id===id);
   try{
-    await fetch(`${TMS.API}/routes/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-    await load();
+    const res=await fetch(`${TMS.API}/routes/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    if(res.ok){
+      if(r) r.status=status;
+    }
   }catch{
-    const r=allRoutes.find(x=>x.id===id);
     if(r) r.status=status;
-    renderKPIs();filterTable();
   }
+  // Limpa filtro de status para não sumir a rota
+  document.getElementById('filterStatus').value='';
+  renderKPIs();
+  filterTable();
 }
 function initMap(){
   map=L.map('map',{zoomControl:false}).setView([-23.5505,-46.6333],11);

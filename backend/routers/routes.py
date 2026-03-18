@@ -62,9 +62,6 @@ def criar_rota(data: RouteCreate, db: Session = Depends(get_db)):
     if not veiculo:
         raise HTTPException(status_code=404, detail="Veículo não encontrado")
 
-    if veiculo.status not in [VehicleStatus.disponivel]:
-        raise HTTPException(status_code=400, detail=f"Veículo não está disponível. Status atual: {veiculo.status}")
-
     carga_total = sum(p.carga_kg for p in data.paradas)
     if carga_total > veiculo.capacidade_kg:
         raise HTTPException(status_code=400, detail=f"Carga total ({carga_total}kg) excede capacidade do veículo ({veiculo.capacidade_kg}kg)")
