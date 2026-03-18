@@ -340,11 +340,13 @@ async function loadEntregas() {
     entregas = await entRes.json();
 
   } catch {
-    entregas = [
-      {id:1,nf_numero:'000001',nome_fantasia:'Mercado Central',endereco:'Av. Paulista, 1000, São Paulo',cidade:'São Paulo',peso_kg:250,volume_m3:1.2,status:'em_rota',lat:-23.561,lng:-46.655,observacao:''},
-      {id:2,nf_numero:'000002',nome_fantasia:'Padaria do João',endereco:'R. Augusta, 500, São Paulo',cidade:'São Paulo',peso_kg:80,volume_m3:0.5,status:'pendente',lat:-23.553,lng:-46.648,observacao:'Entregar antes das 10h'},
-      {id:3,nf_numero:'000003',nome_fantasia:'Farmácia Saúde',endereco:'Al. Santos, 200, São Paulo',cidade:'São Paulo',peso_kg:15,volume_m3:0.1,status:'entregue',lat:-23.558,lng:-46.660,observacao:''},
-    ];
+    document.getElementById('entregasList').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Erro ao carregar</div>
+        <div style="font-size:12px">Verifique sua conexão e tente novamente.</div>
+      </div>`;
+    return;
   }
   renderEntregas();
   updateKPIs();
