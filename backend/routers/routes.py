@@ -9,6 +9,7 @@ import math
 from core.database import get_db
 from models.models import Route, Stop, Vehicle, RouteStatus
 from schemas.schemas import RouteCreate, RouteOut, RouteUpdate, OtimizacaoRequest, OtimizacaoResponse, StopCreate
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/routes", tags=["Rotas"])
 
@@ -61,12 +62,15 @@ def criar_rota(data: RouteCreate, db: Session = Depends(get_db)):
     if not veiculo:
         raise HTTPException(status_code=404, detail="Veículo não encontrado")
 
+    if veiculo.status not in [VehicleStatus.disponivel]:
+        raise HTTPException(status_code=400, detail=f"Veículo não está disponível. Status atual: {veiculo.status}")
+
     carga_total = sum(p.carga_kg for p in data.paradas)
     if carga_total > veiculo.capacidade_kg:
         raise HTTPException(status_code=400, detail=f"Carga total ({carga_total}kg) excede capacidade do veículo ({veiculo.capacidade_kg}kg)")
 
     distancia = calcular_distancia_total(data.origem_lat, data.origem_lng, data.paradas)
-    tempo_est = int(distancia / 40 * 60)  # média 40km/h
+    tempo_est = int(distancia / 40 * 60)
 
     rota = Route(
         nome=data.nome,
@@ -83,12 +87,13 @@ def criar_rota(data: RouteCreate, db: Session = Depends(get_db)):
     db.flush()
 
     for i, parada_data in enumerate(data.paradas):
-        parada = Stop(route_id=rota.id, ordem=i+1, **parada_data.model_dump())
+        parada_dict = parada_data.model_dump(exclude={'ordem'})
+        parada = Stop(route_id=rota.id, ordem=i+1, **parada_dict)
         db.add(parada)
 
+    registrar(db, 'criou_rota', 'route', rota.id, f'Rota {rota.nome} criada com {len(data.paradas)} paradas')
     db.commit()
     db.refresh(rota)
-    registrar(db, 'criou_rota', 'route', rota.id, f'Rota {rota.nome} criada com {len(data.paradas)} paradas')
     return rota
 
 @router.patch("/{route_id}", response_model=RouteOut)
@@ -101,14 +106,14 @@ def atualizar_rota(route_id: int, data: RouteUpdate, db: Session = Depends(get_d
         setattr(rota, campo, valor)
 
     if data.status == RouteStatus.em_andamento and not rota.iniciada_em:
-        rota.iniciada_em = datetime.utcnow()
+        rota.iniciada_em = datetime.now(timezone.utc)
         veiculo = db.query(Vehicle).filter(Vehicle.id == rota.vehicle_id).first()
         if veiculo:
             from models.models import VehicleStatus
             veiculo.status = VehicleStatus.em_rota
 
     if data.status == RouteStatus.concluida and not rota.concluida_em:
-        rota.concluida_em = datetime.utcnow()
+        rota.concluida_em = datetime.now(timezone.utc)
         veiculo = db.query(Vehicle).filter(Vehicle.id == rota.vehicle_id).first()
         if veiculo:
             from models.models import VehicleStatus

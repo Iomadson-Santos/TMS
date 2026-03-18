@@ -30,8 +30,16 @@ class ConnectionManager:
                 pass
 
     async def broadcast_all(self, data: dict):
-        for connections in self.active.values():
-            for ws in connections:
+        # Envia para quem assina "todos" (-1)
+        for ws in self.active.get(-1, []):
+            try:
+                await ws.send_json(data)
+            except Exception:
+                pass
+        # Envia para quem assina o veículo específico
+        vid = data.get("vehicle_id")
+        if vid:
+            for ws in self.active.get(vid, []):
                 try:
                     await ws.send_json(data)
                 except Exception:

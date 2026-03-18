@@ -10,4 +10,3 @@ def registrar(db: Session, acao: str, entidade: str, entidade_id: int = None, de
         usuario=usuario,
     )
     db.add(log)
-    db.commit()

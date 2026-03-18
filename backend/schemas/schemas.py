@@ -1,9 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 from models.models import VehicleStatus, RouteStatus
 
-# ── Vehicle ──────────────────────────────────────────────
 class VehicleBase(BaseModel):
     placa: str
     modelo: str
@@ -35,9 +34,7 @@ class VehicleOut(VehicleBase):
     class Config:
         from_attributes = True
 
-# ── Stop ─────────────────────────────────────────────────
 class StopBase(BaseModel):
-    ordem: int
     endereco: str
     lat: float
     lng: float
@@ -46,17 +43,17 @@ class StopBase(BaseModel):
     observacao: Optional[str] = None
 
 class StopCreate(StopBase):
-    pass
+    ordem: Optional[int] = None
 
 class StopOut(StopBase):
     id: int
     route_id: int
+    ordem: int
     concluida: bool
 
     class Config:
         from_attributes = True
 
-# ── Route ────────────────────────────────────────────────
 class RouteBase(BaseModel):
     nome: str
     vehicle_id: int
@@ -66,7 +63,7 @@ class RouteBase(BaseModel):
     observacao: Optional[str] = None
 
 class RouteCreate(RouteBase):
-    paradas: List[StopCreate] = []
+    paradas: List[StopCreate] = Field(default_factory=list)
 
 class RouteUpdate(BaseModel):
     nome: Optional[str] = None
@@ -84,13 +81,12 @@ class RouteOut(RouteBase):
     criado_em: datetime
     iniciada_em: Optional[datetime] = None
     concluida_em: Optional[datetime] = None
-    paradas: List[StopOut] = []
+    paradas: List[StopOut] = Field(default_factory=list)
     veiculo: Optional[VehicleOut] = None
 
     class Config:
         from_attributes = True
 
-# ── Tracking ─────────────────────────────────────────────
 class TrackingCreate(BaseModel):
     vehicle_id: int
     route_id: Optional[int] = None
@@ -105,7 +101,6 @@ class TrackingOut(TrackingCreate):
     class Config:
         from_attributes = True
 
-# ── Otimização ───────────────────────────────────────────
 class OtimizacaoRequest(BaseModel):
     vehicle_id: int
     origem_lat: float

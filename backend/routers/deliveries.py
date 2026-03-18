@@ -68,8 +68,15 @@ def atribuir_rota(delivery_id: int, route_id: int, db: Session = Depends(get_db)
     d = db.query(Delivery).filter(Delivery.id == delivery_id).first()
     if not d:
         raise HTTPException(status_code=404, detail="Entrega não encontrada")
+
+    from models.models import Route
+    rota = db.query(Route).filter(Route.id == route_id).first()
+    if not rota:
+        raise HTTPException(status_code=404, detail="Rota não encontrada")
+
     d.route_id = route_id
     d.status = DeliveryStatus.em_rota
+    registrar(db, 'atribuiu_rota', 'delivery', d.id, f'NF {d.nf_numero} atribuída à rota {rota.nome}')
     db.commit()
     db.refresh(d)
     return d
@@ -90,6 +97,7 @@ def deletar_entrega(delivery_id: int, db: Session = Depends(get_db)):
     d = db.query(Delivery).filter(Delivery.id == delivery_id).first()
     if not d:
         raise HTTPException(status_code=404, detail="Entrega não encontrada")
+    registrar(db, 'excluiu_entrega', 'delivery', d.id, f'NF {d.nf_numero} — {d.nome_fantasia}')
     db.delete(d)
     db.commit()
 @router.get("/rota/{route_id}", response_model=List[DeliveryOut])

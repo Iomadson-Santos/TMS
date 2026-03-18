@@ -49,5 +49,12 @@ def deletar_veiculo(vehicle_id: int, db: Session = Depends(get_db)):
     if not v:
         raise HTTPException(status_code=404, detail="Veículo não encontrado")
     registrar(db, 'excluiu_veiculo', 'vehicle', v.id, f'Veículo {v.placa} excluído')
+    from models.models import Route, RouteStatus
+    rota_ativa = db.query(Route).filter(
+        Route.vehicle_id == vehicle_id,
+        Route.status == RouteStatus.em_andamento
+    ).first()
+    if rota_ativa:
+        raise HTTPException(status_code=400, detail=f"Veículo possui rota ativa: {rota_ativa.nome}")
     db.delete(v)
     db.commit()

@@ -3,11 +3,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "mysql+pymysql://root:root@localhost:3306/tms_db"
+    DATABASE_URL: str
     SECRET_KEY: str = "dev-secret-key"
     DEBUG: bool = True
 

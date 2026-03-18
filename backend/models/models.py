@@ -22,7 +22,7 @@ class Vehicle(Base):
     id = Column(Integer, primary_key=True, index=True)
     placa = Column(String(10), unique=True, nullable=False)
     modelo = Column(String(100), nullable=False)
-    tipo = Column(String(50), nullable=False)          # caminhao, van, moto etc
+    tipo = Column(String(50), nullable=False)
     capacidade_kg = Column(Float, nullable=False)
     status = Column(Enum(VehicleStatus), default=VehicleStatus.disponivel)
     motorista = Column(String(100))
@@ -30,16 +30,16 @@ class Vehicle(Base):
     lat_atual = Column(Float, default=-23.5505)
     lng_atual = Column(Float, default=-46.6333)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
+    atualizado_em = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     rotas = relationship("Route", back_populates="veiculo")
-    rastreamentos = relationship("Tracking", back_populates="veiculo")
+    rastreamentos = relationship("Tracking", back_populates="veiculo", cascade="all, delete-orphan")
 
 class Stop(Base):
     __tablename__ = "stops"
 
     id = Column(Integer, primary_key=True, index=True)
-    route_id = Column(Integer, ForeignKey("routes.id"), nullable=False)
+    route_id = Column(Integer, ForeignKey("routes.id", ondelete="CASCADE"), nullable=False)
     ordem = Column(Integer, nullable=False)
     endereco = Column(String(255), nullable=False)
     lat = Column(Float, nullable=False)
@@ -70,14 +70,14 @@ class Route(Base):
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
 
     veiculo = relationship("Vehicle", back_populates="rotas")
-    paradas = relationship("Stop", back_populates="rota", order_by="Stop.ordem")
+    paradas = relationship("Stop", back_populates="rota", order_by="Stop.ordem", cascade="all, delete-orphan")
 
 class Tracking(Base):
     __tablename__ = "tracking"
 
     id = Column(Integer, primary_key=True, index=True)
-    vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=False)
-    route_id = Column(Integer, ForeignKey("routes.id"), nullable=True)
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=False)
+    route_id = Column(Integer, ForeignKey("routes.id", ondelete="SET NULL"), nullable=True)
     lat = Column(Float, nullable=False)
     lng = Column(Float, nullable=False)
     velocidade_kmh = Column(Float, default=0)
