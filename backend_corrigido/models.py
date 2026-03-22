@@ -1,8 +1,11 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum, Text, Boolean
+import enum
+
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from core.database import Base
-import enum
+
 
 class VehicleStatus(str, enum.Enum):
     disponivel = "disponivel"
@@ -10,11 +13,13 @@ class VehicleStatus(str, enum.Enum):
     manutencao = "manutencao"
     inativo = "inativo"
 
+
 class RouteStatus(str, enum.Enum):
     planejada = "planejada"
     em_andamento = "em_andamento"
     concluida = "concluida"
     cancelada = "cancelada"
+
 
 class Vehicle(Base):
     __tablename__ = "vehicles"
@@ -30,10 +35,15 @@ class Vehicle(Base):
     lat_atual = Column(Float, default=-23.5505)
     lng_atual = Column(Float, default=-46.6333)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
 
     rotas = relationship("Route", back_populates="veiculo")
-    rastreamentos = relationship("Tracking", back_populates="veiculo", cascade="all, delete-orphan")
+    rastreamentos = relationship(
+        "Tracking",
+        back_populates="veiculo",
+        cascade="all, delete-orphan",
+    )
+
 
 class Stop(Base):
     __tablename__ = "stops"
@@ -50,6 +60,7 @@ class Stop(Base):
     observacao = Column(Text)
 
     rota = relationship("Route", back_populates="paradas")
+
 
 class Route(Base):
     __tablename__ = "routes"
@@ -70,14 +81,21 @@ class Route(Base):
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
 
     veiculo = relationship("Vehicle", back_populates="rotas")
-    paradas = relationship("Stop", back_populates="rota", order_by="Stop.ordem", cascade="all, delete-orphan")
+    paradas = relationship(
+        "Stop",
+        back_populates="rota",
+        order_by="Stop.ordem",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
 
 class Tracking(Base):
     __tablename__ = "tracking"
 
     id = Column(Integer, primary_key=True, index=True)
-    vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=False)
-    route_id = Column(Integer, ForeignKey("routes.id", ondelete="SET NULL"), nullable=True)
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id"), nullable=False)
+    route_id = Column(Integer, ForeignKey("routes.id"), nullable=True)
     lat = Column(Float, nullable=False)
     lng = Column(Float, nullable=False)
     velocidade_kmh = Column(Float, default=0)

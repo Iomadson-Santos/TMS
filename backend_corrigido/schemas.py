@@ -1,7 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
-from models.models import VehicleStatus, RouteStatus
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+from models.models import RouteStatus, VehicleStatus
+
 
 class VehicleBase(BaseModel):
     placa: str
@@ -11,8 +14,10 @@ class VehicleBase(BaseModel):
     motorista: Optional[str] = None
     telefone_motorista: Optional[str] = None
 
+
 class VehicleCreate(VehicleBase):
     pass
+
 
 class VehicleUpdate(BaseModel):
     modelo: Optional[str] = None
@@ -24,6 +29,7 @@ class VehicleUpdate(BaseModel):
     lat_atual: Optional[float] = None
     lng_atual: Optional[float] = None
 
+
 class VehicleOut(VehicleBase):
     id: int
     status: VehicleStatus
@@ -34,6 +40,7 @@ class VehicleOut(VehicleBase):
     class Config:
         from_attributes = True
 
+
 class StopBase(BaseModel):
     endereco: str
     lat: float
@@ -42,8 +49,10 @@ class StopBase(BaseModel):
     carga_kg: float = 0
     observacao: Optional[str] = None
 
+
 class StopCreate(StopBase):
     ordem: Optional[int] = None
+
 
 class StopOut(StopBase):
     id: int
@@ -54,6 +63,7 @@ class StopOut(StopBase):
     class Config:
         from_attributes = True
 
+
 class RouteBase(BaseModel):
     nome: str
     vehicle_id: int
@@ -62,8 +72,10 @@ class RouteBase(BaseModel):
     origem_endereco: str
     observacao: Optional[str] = None
 
+
 class RouteCreate(RouteBase):
     paradas: List[StopCreate] = Field(default_factory=list)
+
 
 class RouteUpdate(BaseModel):
     nome: Optional[str] = None
@@ -71,6 +83,7 @@ class RouteUpdate(BaseModel):
     distancia_km: Optional[float] = None
     tempo_estimado_min: Optional[int] = None
     observacao: Optional[str] = None
+
 
 class RouteOut(RouteBase):
     id: int
@@ -87,12 +100,14 @@ class RouteOut(RouteBase):
     class Config:
         from_attributes = True
 
+
 class TrackingCreate(BaseModel):
     vehicle_id: int
     route_id: Optional[int] = None
     lat: float
     lng: float
     velocidade_kmh: float = 0
+
 
 class TrackingOut(TrackingCreate):
     id: int
@@ -101,6 +116,7 @@ class TrackingOut(TrackingCreate):
     class Config:
         from_attributes = True
 
+
 class OtimizacaoRequest(BaseModel):
     vehicle_id: int
     origem_lat: float
@@ -108,6 +124,7 @@ class OtimizacaoRequest(BaseModel):
     origem_endereco: str
     paradas: List[StopCreate]
     nome_rota: str = "Rota Otimizada"
+
 
 class OtimizacaoResponse(BaseModel):
     ordem_otimizada: List[StopCreate]
