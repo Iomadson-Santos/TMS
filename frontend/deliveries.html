@@ -235,8 +235,8 @@ async function load() {
 
 async function fetchDeliveries() {
   try {
-    const r = await fetch(`${TMS.API}/deliveries/`);
-    return await r.json();
+    const data = await TMS.api('/deliveries/');
+    return Array.isArray(data) ? data : [];
   } catch {
     return [
       {id:1,nf_numero:'000001',nf_serie:'1',nome_fantasia:'Mercado Central',cnpj_cpf:'12.345.678/0001-90',telefone:'(11)3333-4444',endereco:'Av. Paulista, 1000',cidade:'São Paulo',estado:'SP',cep:'01310-100',peso_kg:250,volume_m3:1.2,status:'pendente',route_id:null,criado_em:'2026-03-15T08:00:00',observacao:''},
@@ -398,34 +398,27 @@ async function saveDelivery() {
   }
   try {
     if (id) {
-      await fetch(`${TMS.API}/deliveries/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const res = await fetch(`${TMS.API}/deliveries/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error('Erro ao atualizar entrega');
     } else {
-      await fetch(`${TMS.API}/deliveries/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const res = await fetch(`${TMS.API}/deliveries/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error('Erro ao criar entrega');
     }
     await load();
   } catch {
-    if (id) {
-      const i=allDeliveries.findIndex(x=>x.id===parseInt(id));
-      if(i>=0) allDeliveries[i]={...allDeliveries[i],...body};
-    } else {
-      allDeliveries.push({...body,id:allDeliveries.length+1,status:'pendente',route_id:null,criado_em:new Date().toISOString()});
-    }
-    renderKPIs(); filterTable();
+    alert('Não foi possível salvar a entrega.');
   }
   closeModal();
 }
 
 async function deleteDelivery(id) {
   if (!confirm('Excluir esta entrega?')) return;
-  try { await fetch(`${TMS.API}/deliveries/${id}`,{method:'DELETE'}); await load(); }
-  catch { allDeliveries=allDeliveries.filter(x=>x.id!==id); renderKPIs(); filterTable(); }
+  try { const res = await fetch(`${TMS.API}/deliveries/${id}`,{method:'DELETE'}); if(!res.ok) throw new Error(); await load(); }
+  catch { alert('Não foi possível excluir a entrega.'); }
 }
 
 async function concluirEntrega(id) {
-  try { await fetch(`${TMS.API}/deliveries/${id}/concluir`,{method:'PATCH'}); await load(); }
+  try { const res = await fetch(`${TMS.API}/deliveries/${id}/concluir`,{method:'PATCH'}); if(!res.ok) throw new Error(); await load(); }
   catch {
-    const d=allDeliveries.find(x=>x.id===id); if(d) d.status='entregue';
-    renderKPIs(); filterTable();
+    alert('Não foi possível concluir a entrega.');
   }
 }
 

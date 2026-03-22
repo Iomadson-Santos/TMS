@@ -109,25 +109,35 @@ const entidadeLabel = {
   vehicle: ['🚛', 'Veículo'],
 };
 
-// Data padrão = hoje
-document.getElementById('dataRotas').value = new Date().toISOString().slice(0,10);
-document.getElementById('dataEntregasInicio').value = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10);
-document.getElementById('dataEntregasFim').value = new Date().toISOString().slice(0,10);
+
+function hojeLocalISO() {
+  return TMS.localISODate();
+}
+
+function diasAtrasLocalISO(dias) {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  return TMS.localISODate(d);
+}
+
+document.getElementById('dataRotas').value = hojeLocalISO();
+document.getElementById('dataEntregasInicio').value = diasAtrasLocalISO(30);
+document.getElementById('dataEntregasFim').value = hojeLocalISO();
+
 
 async function loadLogs() {
+  const body = document.getElementById('auditTableBody');
+  const footer = document.getElementById('tableFooter');
   try {
-    const r = await fetch(`${TMS.API}/audit/?limit=200`);
-    allLogs = await r.json();
-  } catch {
-    allLogs = [
-      {id:1,acao:'criou_entrega',entidade:'delivery',entidade_id:1,descricao:'NF 000001 — Mercado Central',usuario:'operador',criado_em:'2026-03-15T08:05:00'},
-      {id:2,acao:'criou_rota',entidade:'route',entidade_id:1,descricao:'Rota Centro SP criada com 3 paradas',usuario:'operador',criado_em:'2026-03-15T08:30:00'},
-      {id:3,acao:'alterou_status',entidade:'route',entidade_id:1,descricao:'Status alterado para em_andamento',usuario:'sistema',criado_em:'2026-03-15T09:00:00'},
-      {id:4,acao:'concluiu_entrega',entidade:'delivery',entidade_id:1,descricao:'Entrega NF 000001 marcada como concluída',usuario:'motorista',criado_em:'2026-03-15T10:15:00'},
-      {id:5,acao:'criou_veiculo',entidade:'vehicle',entidade_id:1,descricao:'Veículo BRA-2E19 cadastrado',usuario:'admin',criado_em:'2026-03-15T07:00:00'},
-    ];
+    const data = await TMS.api('/audit/?limit=200');
+    allLogs = Array.isArray(data) ? data : [];
+    filterTable();
+  } catch (err) {
+    allLogs = [];
+    body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Não foi possível carregar a auditoria da API</div></div></td></tr>`;
+    footer.textContent = 'Falha ao carregar dados';
+    console.error('Erro ao carregar auditoria:', err);
   }
-  filterTable();
 }
 
 function filterTable() {
@@ -137,10 +147,10 @@ function filterTable() {
 
   let filtered = allLogs.filter(l => {
     const matchSearch = !search ||
-      l.acao.toLowerCase().includes(search) ||
-      (l.descricao||'').toLowerCase().includes(search);
+      (l.acao || '').toLowerCase().includes(search) ||
+      (l.descricao || '').toLowerCase().includes(search);
     const matchEntidade = !entidade || l.entidade === entidade;
-    const matchData = !data || l.criado_em.startsWith(data);
+    const matchData = !data || String(l.criado_em || '').startsWith(data);
     return matchSearch && matchEntidade && matchData;
   });
 
@@ -156,11 +166,11 @@ function renderTable(data) {
   }
 
   body.innerHTML = data.map(l => {
-    const dt = new Date(l.criado_em);
-    const hora = dt.toLocaleString('pt-BR');
+    const dt = l.criado_em ? new Date(l.criado_em) : null;
+    const hora = dt && !Number.isNaN(dt.getTime()) ? dt.toLocaleString('pt-BR') : '—';
     const [eIcon, eLabel] = entidadeLabel[l.entidade] || ['•', l.entidade];
-    const acao = l.acao.replace(/_/g,' ');
-    const icone = Object.entries(acaoIcon).find(([k]) => l.acao.includes(k))?.[1] || '•';
+    const acao = String(l.acao || 'sem_acao').replace(/_/g,' ');
+    const icone = Object.entries(acaoIcon).find(([k]) => String(l.acao || '').includes(k))?.[1] || '•';
 
     return `<tr>
       <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${hora}</td>
@@ -181,38 +191,52 @@ function renderTable(data) {
   document.getElementById('tableFooter').textContent = `Exibindo ${data.length} de ${allLogs.length} registros`;
 }
 
+
 async function gerarPDFRotas() {
   const data = document.getElementById('dataRotas').value;
   if (!data) { alert('Selecione uma data.'); return; }
-  const url = `${TMS.API}/audit/relatorio/rotas-do-dia?data=${data}`;
+  const url = `${TMS.API}/audit/relatorio/rotas-do-dia?${new URLSearchParams({ data }).toString()}`;
   try {
     const r = await fetch(url);
-    if (!r.ok) { alert('Erro ao gerar PDF. Verifique se o reportlab está instalado.'); return; }
+    if (!r.ok) { alert('Erro ao gerar PDF.'); return; }
     const blob = await r.blob();
+    const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = blobUrl;
     a.download = `rotas_${data}.pdf`;
+    document.body.appendChild(a);
     a.click();
-  } catch { alert('Erro ao conectar na API.'); }
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao conectar na API.');
+  }
 }
+
 
 async function gerarPDFEntregas() {
   const inicio = document.getElementById('dataEntregasInicio').value;
   const fim = document.getElementById('dataEntregasFim').value;
-  let url = `${TMS.API}/audit/relatorio/entregas-por-cliente`;
-  const params = [];
-  if (inicio) params.push(`data_inicio=${inicio}`);
-  if (fim) params.push(`data_fim=${fim}`);
-  if (params.length) url += '?' + params.join('&');
+  if (!inicio || !fim) { alert('Selecione o período.'); return; }
+  const params = new URLSearchParams({ data_inicio: inicio, data_fim: fim });
+  const url = `${TMS.API}/audit/relatorio/entregas-por-cliente?${params.toString()}`;
   try {
     const r = await fetch(url);
-    if (!r.ok) { alert('Erro ao gerar PDF. Verifique se o reportlab está instalado.'); return; }
+    if (!r.ok) { alert('Erro ao gerar PDF.'); return; }
     const blob = await r.blob();
+    const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `entregas_clientes_${inicio||'todos'}.pdf`;
+    a.href = blobUrl;
+    a.download = `entregas_${inicio}_${fim}.pdf`;
+    document.body.appendChild(a);
     a.click();
-  } catch { alert('Erro ao conectar na API.'); }
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error(err);
+    alert('Erro ao conectar na API.');
+  }
 }
 
 loadLogs();

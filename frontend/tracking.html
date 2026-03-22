@@ -105,7 +105,7 @@ function initMap(){
 
 function connectWS(){
   try{
-    ws=new WebSocket('wss://tms-production-3fba.up.railway.app/tracking/ws/all/live');
+    ws=new WebSocket(TMS.toWsURL('/tracking/ws/all/live'));
     ws.onopen=()=>{document.getElementById('wsLabel').textContent='AO VIVO';};
     ws.onmessage=e=>{const d=JSON.parse(e.data);onUpdate(d);};
     ws.onclose=()=>{document.getElementById('wsLabel').textContent='OFFLINE';setTimeout(connectWS,3000);};
@@ -124,6 +124,7 @@ function onUpdate(data){
 
 async function load(){
   vehicles=await TMS.fetchVehicles();
+  if (!Array.isArray(vehicles)) vehicles = [];
   vehicles.forEach(v=>v.velocidade=0);
   renderList();renderMarkers();
   document.getElementById('fleetCount').textContent=`${vehicles.filter(v=>v.status==='em_rota').length} em rota · ${vehicles.length} total`;

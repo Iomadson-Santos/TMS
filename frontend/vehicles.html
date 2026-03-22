@@ -233,21 +233,19 @@ async function saveVehicle() {
   const body={placa:document.getElementById('vPlaca').value.trim(),modelo:document.getElementById('vModelo').value.trim(),tipo:document.getElementById('vTipo').value,capacidade_kg:parseFloat(document.getElementById('vCapacidade').value)||0,status:document.getElementById('vStatus').value,motorista:document.getElementById('vMotorista').value.trim()||null,telefone_motorista:document.getElementById('vTelefone').value.trim()||null};
   if(!body.placa||!body.modelo||!body.capacidade_kg){alert('Preencha os campos obrigatórios.');return;}
   try {
-    if(id) await fetch(`${TMS.API}/vehicles/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    else await fetch(`${TMS.API}/vehicles/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(id) { const res = await fetch(`${TMS.API}/vehicles/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error(); }
+    else { const res = await fetch(`${TMS.API}/vehicles/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error(); }
     await load();
   } catch {
-    if(id){const i=allVehicles.findIndex(x=>x.id===parseInt(id));if(i>=0)allVehicles[i]={...allVehicles[i],...body};}
-    else allVehicles.push({...body,id:allVehicles.length+1});
-    renderKPIs();filterTable();
+    alert('Não foi possível salvar o veículo.');
   }
   closeModal();
 }
 
 async function deleteVehicle(id) {
   if(!confirm('Excluir este veículo?'))return;
-  try{await fetch(`${TMS.API}/vehicles/${id}`,{method:'DELETE'});await load();}
-  catch{allVehicles=allVehicles.filter(x=>x.id!==id);renderKPIs();filterTable();}
+  try{const res = await fetch(`${TMS.API}/vehicles/${id}`,{method:'DELETE'}); if(!res.ok) throw new Error(); await load();}
+  catch{alert('Não foi possível excluir o veículo.');}
 }
 
 load();

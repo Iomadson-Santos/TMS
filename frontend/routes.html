@@ -242,6 +242,8 @@ let selectedDeliveries=[],autoOptimizedOrder=null;
 
 async function load(){
   [allRoutes,vehicles]=await Promise.all([TMS.fetchRoutes(),TMS.fetchVehicles()]);
+  if (!Array.isArray(allRoutes)) allRoutes = [];
+  if (!Array.isArray(vehicles)) vehicles = [];
   renderKPIs();filterTable();populateVehicleSelects();renderMapRoutes();
 }
 
@@ -348,7 +350,7 @@ async function buscarEntregasPendentes(){
   const cidade=document.getElementById('autoCidade').value.toLowerCase().trim();
   const estado=document.getElementById('autoEstado').value;
   let entregas=[];
-  try{const r=await fetch(`${TMS.API}/deliveries/?status=pendente`);entregas=await r.json();}
+  try{const data = await TMS.api('/deliveries/?status=pendente'); entregas = Array.isArray(data) ? data : [];}
   catch{entregas=[
     {id:1,nf_numero:'000001',nome_fantasia:'Mercado Central',endereco:'Av. Paulista, 1000',cidade:'São Paulo',estado:'SP',peso_kg:250},
     {id:2,nf_numero:'000002',nome_fantasia:'Padaria do João',endereco:'R. Augusta, 500',cidade:'São Paulo',estado:'SP',peso_kg:80},
@@ -513,7 +515,7 @@ async function salvarRotaAuto(){
     for(const d of selecionadas)await fetch(`${TMS.API}/deliveries/${d.id}/atribuir-rota/${rota.id}`,{method:'PATCH'}).catch(()=>{});
     await load();
   }catch{
-    allRoutes.push({...body,id:allRoutes.length+1,status:'planejada',distancia_km:0,tempo_estimado_min:0,carga_total_kg:0,criado_em:new Date().toISOString()});
+    alert('Não foi possível salvar a rota.');
     renderKPIs();filterTable();
   }
   closeAutoModal();
@@ -549,13 +551,13 @@ async function salvarRota(){
   const paradas=optimizedOrder||getStops();
   const body={nome:document.getElementById('rNome').value||'Nova Rota',vehicle_id:parseInt(document.getElementById('rVehicle').value)||1,origem_lat:parseFloat(document.getElementById('rOrigemLat').value)||-23.5505,origem_lng:parseFloat(document.getElementById('rOrigemLng').value)||-46.6333,origem_endereco:document.getElementById('rOrigem').value||'Origem',paradas};
   try{const res=await fetch(`${TMS.API}/routes/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();alert(e.detail||'Erro');return;}await load();}
-  catch{allRoutes.push({...body,id:allRoutes.length+1,status:'planejada',distancia_km:0,tempo_estimado_min:0,carga_total_kg:0,criado_em:new Date().toISOString()});renderKPIs();filterTable();}
+  catch{alert('Não foi possível salvar a rota.');}
   closeModal();
 }
 async function deleteRoute(id){
   if(!confirm('Excluir esta rota?'))return;
-  try{await fetch(`${TMS.API}/routes/${id}`,{method:'DELETE'});await load();}
-  catch{allRoutes=allRoutes.filter(x=>x.id!==id);renderKPIs();filterTable();}
+  try{const res = await fetch(`${TMS.API}/routes/${id}`,{method:'DELETE'}); if(!res.ok) throw new Error(); await load();}
+  catch{alert('Não foi possível excluir a rota.');}
 }
 function openModal(){document.getElementById('modal').classList.add('show');}
 function closeModal(){document.getElementById('modal').classList.remove('show');optimizedOrder=null;document.getElementById('resultBox').classList.remove('show');}

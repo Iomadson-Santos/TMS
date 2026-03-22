@@ -9,6 +9,7 @@
   <title>TMS · Motorista</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="tms.js"></script>
   <style>
     :root {
       --bg:#0a0c10; --surface:#111318; --surface2:#181c23; --surface3:#1e232d;
@@ -250,7 +251,7 @@
 </div>
 
 <script>
-const API = 'https://tms-production-3fba.up.railway.app';
+const API = (window.TMS && TMS.API) ? TMS.API : 'https://tms-production-3fba.up.railway.app';
 let driverInfo = null;
 let entregas = [];
 let driverMap = null;
@@ -269,15 +270,15 @@ const statusMap = {
 };
 
 // ── Login ─────────────────────────────────────────────────
+
 async function loadVehicles() {
   try {
-    const r = await fetch(`${API}/vehicles/`);
-    const vs = await r.json();
+    const vs = await TMS.fetchVehicles();
     document.getElementById('loginVeiculo').innerHTML =
       '<option value="">Selecione...</option>' +
-      vs.map(v=>`<option value="${v.id}" data-placa="${v.placa}" data-modelo="${v.modelo}">${v.placa} — ${v.modelo}</option>`).join('');
+      vs.map(v=>`<option value="${v.id}" data-placa="${v.placa || ''}" data-modelo="${v.modelo || ''}">${v.placa || v.id} — ${v.modelo || 'Veículo'}</option>`).join('');
   } catch {
-    document.getElementById('loginVeiculo').innerHTML = '<option value="1">BRA-2E19 — VW Delivery (demo)</option>';
+    document.getElementById('loginVeiculo').innerHTML = '<option value="">Nenhum veículo disponível</option>';
   }
 }
 
@@ -308,8 +309,7 @@ function logout() {
 async function loadEntregas() {
   try {
     // Busca a rota ativa do veículo do motorista
-    const rotasRes = await fetch(`${TMS.API}/routes/`);
-    const rotas = await rotasRes.json();
+    const rotas = await TMS.api('/routes/');
     const rotaAtiva = rotas.find(r =>
       r.vehicle_id === driverInfo.vehicle_id &&
       (r.status === 'em_andamento' || r.status === 'planejada')
@@ -336,8 +336,8 @@ async function loadEntregas() {
         <button class="btn-location" onclick="iniciarRota(${rotaAtiva.id})">▶ Iniciar Rota</button>`;
     }
     // Busca as entregas da rota
-    const entRes = await fetch(`${TMS.API}/deliveries/rota/${rotaAtiva.id}`);
-    entregas = await entRes.json();
+    const data = await TMS.api(`/deliveries/rota/${rotaAtiva.id}`);
+    entregas = Array.isArray(data) ? data : [];
 
   } catch {
     document.getElementById('entregasList').innerHTML = `
@@ -505,7 +505,7 @@ function startLocation() {
   document.getElementById('btnLocation').textContent = 'GPS Ativo';
   document.getElementById('btnLocation').classList.add('active');
 
-  navigator.geolocation.getCurrentPosition(pos => updatePosition(pos));
+  navigator.geolocation.getCurrentPosition(pos => updatePosition(pos), () => { document.getElementById('locationStatus').textContent = '⚠️ Permissão de localização negada'; stopLocation(); });
   locationInterval = setInterval(() => {
     navigator.geolocation.getCurrentPosition(pos => updatePosition(pos), err => {
       document.getElementById('locationStatus').textContent = '⚠️ Erro no GPS';
@@ -569,7 +569,7 @@ function switchTab(tab, el) {
 async function iniciarRota(id) {
   if (!confirm('Iniciar a rota agora?')) return;
   try {
-    await fetch(`${TMS.API}/routes/${id}`, {
+    await fetch(`${API}/routes/${id}`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({status: 'em_andamento'})
