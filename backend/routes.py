@@ -5,10 +5,10 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from core.audit import registrar
-from core.database import get_db
-from models.models import Route, RouteStatus, Stop, Vehicle, VehicleStatus
-from schemas.schemas import (
+from audit import registrar
+from database import get_db
+from models import Route, RouteStatus, Stop, Vehicle, VehicleStatus
+from schemas import (
     OtimizacaoRequest,
     OtimizacaoResponse,
     RouteCreate,
@@ -155,7 +155,7 @@ def atualizar_rota(route_id: int, data: RouteUpdate, db: Session = Depends(get_d
         if veiculo:
             veiculo.status = VehicleStatus.disponivel
 
-        from models.delivery import Delivery, DeliveryStatus
+        from delivery import Delivery, DeliveryStatus
 
         db.query(Delivery).filter(
             Delivery.route_id == rota.id,

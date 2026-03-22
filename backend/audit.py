@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.audit import AuditLog
+from models import AuditLog
 
 
 def registrar(

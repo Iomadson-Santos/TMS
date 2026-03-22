@@ -3,10 +3,10 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from core.audit import registrar
-from core.database import get_db
-from models.models import RouteStatus, Vehicle
-from schemas.schemas import VehicleCreate, VehicleOut, VehicleUpdate
+from audit import registrar
+from database import get_db
+from models import RouteStatus, Vehicle
+from schemas import VehicleCreate, VehicleOut, VehicleUpdate
 
 router = APIRouter(prefix="/vehicles", tags=["Veículos"])
 

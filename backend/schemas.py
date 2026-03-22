@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from models.models import RouteStatus, VehicleStatus
+from models import RouteStatus, VehicleStatus
 
 
 class VehicleBase(BaseModel):

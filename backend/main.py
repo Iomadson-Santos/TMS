@@ -6,7 +6,10 @@ from vehicles import router as vehicles_router
 from routes import router as routes_router
 from tracking import router as tracking_router
 
-app = FastAPI(title="TMS API", version="1.0.0")
+app = FastAPI(
+    title="TMS API",
+    version="1.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,

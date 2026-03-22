@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from models.delivery import DeliveryStatus
+from delivery import DeliveryStatus
 
 
 class DeliveryBase(BaseModel):

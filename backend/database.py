@@ -1,31 +1,24 @@
 import os
 
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+ENV = os.getenv("ENV", "development")
 
-class Settings(BaseSettings):
-    DATABASE_URL: str = "mysql+pymysql://root:root@localhost:3306/tms_db"
-    SECRET_KEY: str = "dev-secret-key"
-    DEBUG: bool = True
+if ENV == "production" and not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL não configurada em produção")
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-
-settings = Settings()
-
-if os.getenv("ENV") == "production":
-    if settings.DATABASE_URL == "mysql+pymysql://root:root@localhost:3306/tms_db":
-        raise RuntimeError("DATABASE_URL precisa ser configurada em produção")
-    if settings.SECRET_KEY == "dev-secret-key":
-        raise RuntimeError("SECRET_KEY precisa ser configurada em produção")
+if not DATABASE_URL:
+    DATABASE_URL = "mysql+pymysql://root:root@localhost:3306/tms_db"
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    DATABASE_URL,
     pool_pre_ping=True,
     pool_recycle=3600,
 )

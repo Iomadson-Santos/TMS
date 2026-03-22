@@ -4,9 +4,9 @@ from typing import Dict, List
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
-from core.database import get_db
-from models.models import Tracking, Vehicle
-from schemas.schemas import TrackingCreate, TrackingOut
+from database import get_db
+from models import Tracking, Vehicle
+from schemas import TrackingCreate, TrackingOut
 
 router = APIRouter(prefix="/tracking", tags=["Rastreamento"])
 
