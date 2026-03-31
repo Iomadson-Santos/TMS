@@ -18,3 +18,4 @@ def registrar(
         usuario=usuario,
     )
     db.add(log)
+    db.flush()

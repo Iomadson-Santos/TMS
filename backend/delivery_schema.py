@@ -51,6 +51,7 @@ class DeliveryOut(DeliveryBase):
     status: DeliveryStatus
     route_id: Optional[int] = None
     criado_em: datetime
+    atualizado_em: Optional[datetime] = None
 
     class Config:
         from_attributes = True

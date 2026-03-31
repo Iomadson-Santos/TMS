@@ -66,6 +66,32 @@ def listar_rotas(db: Session = Depends(get_db)):
     return db.query(Route).order_by(Route.criado_em.desc()).all()
 
 
+# FIX: /otimizar deve vir ANTES de /{route_id} para evitar que o FastAPI
+# interprete a string "otimizar" como um inteiro e retorne 422.
+@router.post("/otimizar", response_model=OtimizacaoResponse)
+def otimizar_rota(data: OtimizacaoRequest, db: Session = Depends(get_db)):
+    if not data.paradas:
+        raise HTTPException(status_code=400, detail="Informe ao menos uma parada")
+
+    ordem_original = calcular_distancia_total(data.origem_lat, data.origem_lng, data.paradas)
+    ordem_otimizada = nearest_neighbor(data.origem_lat, data.origem_lng, data.paradas)
+    dist_otimizada = calcular_distancia_total(
+        data.origem_lat,
+        data.origem_lng,
+        ordem_otimizada,
+    )
+
+    for i, p in enumerate(ordem_otimizada, start=1):
+        p.ordem = i
+
+    return OtimizacaoResponse(
+        ordem_otimizada=ordem_otimizada,
+        distancia_total_km=dist_otimizada,
+        tempo_estimado_min=int(dist_otimizada / 40 * 60),
+        economia_km=round(ordem_original - dist_otimizada, 2),
+    )
+
+
 @router.get("/{route_id}", response_model=RouteOut)
 def obter_rota(route_id: int, db: Session = Depends(get_db)):
     r = db.query(Route).filter(Route.id == route_id).first()
@@ -137,18 +163,21 @@ def atualizar_rota(route_id: int, data: RouteUpdate, db: Session = Depends(get_d
     if not rota:
         raise HTTPException(status_code=404, detail="Rota não encontrada")
 
+    # FIX: checar data.status ANTES de aplicar o setattr, para que as
+    # comparações abaixo usem o valor do payload e não o estado já sobrescrito.
+    novo_status = data.status
     payload = data.model_dump(exclude_unset=True)
 
     for campo, valor in payload.items():
         setattr(rota, campo, valor)
 
-    if data.status == RouteStatus.em_andamento and not rota.iniciada_em:
+    if novo_status == RouteStatus.em_andamento and not rota.iniciada_em:
         rota.iniciada_em = datetime.now(timezone.utc)
         veiculo = db.query(Vehicle).filter(Vehicle.id == rota.vehicle_id).first()
         if veiculo:
             veiculo.status = VehicleStatus.em_rota
 
-    if data.status == RouteStatus.concluida and not rota.concluida_em:
+    if novo_status == RouteStatus.concluida and not rota.concluida_em:
         rota.concluida_em = datetime.now(timezone.utc)
 
         veiculo = db.query(Vehicle).filter(Vehicle.id == rota.vehicle_id).first()
@@ -209,27 +238,3 @@ def concluir_parada(route_id: int, stop_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"ok": True, "stop_id": stop_id}
-
-
-@router.post("/otimizar", response_model=OtimizacaoResponse)
-def otimizar_rota(data: OtimizacaoRequest, db: Session = Depends(get_db)):
-    if not data.paradas:
-        raise HTTPException(status_code=400, detail="Informe ao menos uma parada")
-
-    ordem_original = calcular_distancia_total(data.origem_lat, data.origem_lng, data.paradas)
-    ordem_otimizada = nearest_neighbor(data.origem_lat, data.origem_lng, data.paradas)
-    dist_otimizada = calcular_distancia_total(
-        data.origem_lat,
-        data.origem_lng,
-        ordem_otimizada,
-    )
-
-    for i, p in enumerate(ordem_otimizada, start=1):
-        p.ordem = i
-
-    return OtimizacaoResponse(
-        ordem_otimizada=ordem_otimizada,
-        distancia_total_km=dist_otimizada,
-        tempo_estimado_min=int(dist_otimizada / 40 * 60),
-        economia_km=round(ordem_original - dist_otimizada, 2),
-    )

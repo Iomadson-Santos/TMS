@@ -101,16 +101,8 @@ async def registrar_posicao(data: TrackingCreate, db: Session = Depends(get_db))
     return t
 
 
-@router.websocket("/ws/{vehicle_id}")
-async def ws_rastreamento(websocket: WebSocket, vehicle_id: int):
-    await manager.connect(websocket, vehicle_id)
-    try:
-        while True:
-            await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, vehicle_id)
-
-
+# FIX: /ws/all/live deve vir ANTES de /ws/{vehicle_id} para evitar que o
+# FastAPI interprete a string "all" como um inteiro e rejeite a conexão.
 @router.websocket("/ws/all/live")
 async def ws_todos_veiculos(websocket: WebSocket):
     await manager.connect(websocket, -1)
@@ -119,3 +111,13 @@ async def ws_todos_veiculos(websocket: WebSocket):
             await asyncio.sleep(1)
     except WebSocketDisconnect:
         manager.disconnect(websocket, -1)
+
+
+@router.websocket("/ws/{vehicle_id}")
+async def ws_rastreamento(websocket: WebSocket, vehicle_id: int):
+    await manager.connect(websocket, vehicle_id)
+    try:
+        while True:
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, vehicle_id)
