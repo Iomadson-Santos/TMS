@@ -15,7 +15,7 @@ if ENV == "production" and not DATABASE_URL:
     raise RuntimeError("DATABASE_URL não configurada em produção")
 
 if not DATABASE_URL:
-    DATABASE_URL = "mysql://root:FbarCVyuyKFOOEvARoCQukjhKMalDaBP@hopper.proxy.rlwy.net:39498/railway"
+    DATABASE_URL = "mysql+pymysql://usuario:MagicKids%402026@host:porta/banco"
 
 engine = create_engine(
     DATABASE_URL,
