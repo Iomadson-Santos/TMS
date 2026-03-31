@@ -13,11 +13,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# FIX: allow_origins=["*"] com allow_credentials=True é inválido pela spec CORS —
-# navegadores rejeitam a resposta quando credentials estão habilitadas e a origem
-# é um wildcard. Origens permitidas devem ser listadas explicitamente.
-# Configure a variável ALLOWED_ORIGINS no ambiente (vírgula-separado).
-_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
+_raw_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173",
+)
 ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
@@ -36,9 +35,9 @@ app.include_router(tracking_router)
 
 @app.get("/")
 def root():
-    return {"ok": True, "service": "tms-api"}
+    return {"ok": True, "service": "tms-api", "allowed_origins": ALLOWED_ORIGINS}
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "allowed_origins": ALLOWED_ORIGINS}

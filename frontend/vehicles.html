@@ -229,23 +229,53 @@ function editVehicle(id) {
 }
 
 async function saveVehicle() {
-  const id=document.getElementById('editId').value;
-  const body={placa:document.getElementById('vPlaca').value.trim(),modelo:document.getElementById('vModelo').value.trim(),tipo:document.getElementById('vTipo').value,capacidade_kg:parseFloat(document.getElementById('vCapacidade').value)||0,status:document.getElementById('vStatus').value,motorista:document.getElementById('vMotorista').value.trim()||null,telefone_motorista:document.getElementById('vTelefone').value.trim()||null};
-  if(!body.placa||!body.modelo||!body.capacidade_kg){alert('Preencha os campos obrigatórios.');return;}
-  try {
-    if(id) { const res = await fetch(`${TMS.API}/vehicles/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error(); }
-    else { const res = await fetch(`${TMS.API}/vehicles/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error(); }
-    await load();
-  } catch {
-    alert('Não foi possível salvar o veículo.');
+  const id = document.getElementById('editId').value;
+  const body = {
+    placa: document.getElementById('vPlaca').value.trim().toUpperCase(),
+    modelo: document.getElementById('vModelo').value.trim(),
+    tipo: document.getElementById('vTipo').value,
+    capacidade_kg: parseFloat(document.getElementById('vCapacidade').value) || 0,
+    status: document.getElementById('vStatus').value,
+    motorista: document.getElementById('vMotorista').value.trim() || null,
+    telefone_motorista: document.getElementById('vTelefone').value.trim() || null
+  };
+  if (!body.placa || !body.modelo || !body.capacidade_kg) {
+    alert('Preencha os campos obrigatórios.');
+    return;
   }
-  closeModal();
+  try {
+    if (id) {
+      await TMS.api(`/vehicles/${id}`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+    } else {
+      await TMS.api('/vehicles/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+    }
+    await load();
+    closeModal();
+    alert(id ? 'Veículo atualizado com sucesso.' : 'Veículo cadastrado com sucesso.');
+  } catch (err) {
+    console.error('Erro ao salvar veículo:', err);
+    alert(TMS.getErrorMessage(err, 'Não foi possível salvar o veículo.'));
+  }
 }
 
 async function deleteVehicle(id) {
-  if(!confirm('Excluir este veículo?'))return;
-  try{const res = await fetch(`${TMS.API}/vehicles/${id}`,{method:'DELETE'}); if(!res.ok) throw new Error(); await load();}
-  catch{alert('Não foi possível excluir o veículo.');}
+  if (!confirm('Excluir este veículo?')) return;
+  try {
+    await TMS.api(`/vehicles/${id}`, { method: 'DELETE' });
+    await load();
+    alert('Veículo excluído com sucesso.');
+  } catch (err) {
+    console.error('Erro ao excluir veículo:', err);
+    alert(TMS.getErrorMessage(err, 'Não foi possível excluir o veículo.'));
+  }
 }
 
 load();

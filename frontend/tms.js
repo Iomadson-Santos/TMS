@@ -1,9 +1,20 @@
 // Shared TMS UI
 const TMS = {
   API: (function () {
+    const DEFAULT_API = 'https://tms-production-3fba.up.railway.app';
     const saved = window.localStorage?.getItem('TMS_API');
     const meta = document.querySelector('meta[name="tms-api"]')?.content;
-    return (saved || meta || 'https://tms-production-3fba.up.railway.app').replace(/\/$/, '');
+    const candidate = (saved || meta || DEFAULT_API).replace(/\/$/, '');
+
+    const isHttpPage = /^https?:\/\//i.test(window.location.href);
+    const isLocalHostTarget = /(^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$)|(^ws:\/\/(127\.0\.0\.1|localhost)(:\d+)?$)/i.test(candidate);
+
+    if (saved && isHttpPage && isLocalHostTarget) {
+      try { window.localStorage.removeItem('TMS_API'); } catch {}
+      return DEFAULT_API;
+    }
+
+    return candidate;
   })(),
 
   toWsURL(path) {
@@ -24,8 +35,13 @@ const TMS = {
     const isJson = contentType.includes('application/json');
     const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => '');
     if (!res.ok) {
-      const detail = payload && typeof payload === 'object' ? (payload.detail || JSON.stringify(payload)) : (payload || `HTTP ${res.status}`);
-      throw new Error(detail);
+      const detail = payload && typeof payload === 'object'
+        ? (payload.detail || JSON.stringify(payload))
+        : (payload || `HTTP ${res.status}`);
+      const error = new Error(detail);
+      error.status = res.status;
+      error.payload = payload;
+      throw error;
     }
     return payload;
   },
@@ -33,6 +49,22 @@ const TMS = {
   async api(path, options = {}) {
     const cleanPath = String(path || '').startsWith('/') ? path : `/${path || ''}`;
     return this.fetchJSON(`${this.API}${cleanPath}`, options);
+  },
+
+  getErrorMessage(error, fallback = 'Erro na operação.') {
+    if (!error) return fallback;
+    if (typeof error === 'string') return error;
+    if (error.message) return error.message;
+    return fallback;
+  },
+
+  async healthcheck() {
+    try {
+      await this.api('/health');
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   notify(message) {

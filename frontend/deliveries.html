@@ -378,47 +378,68 @@ function editDelivery(id) {
 async function saveDelivery() {
   const id = document.getElementById('editId').value;
   const body = {
-    nf_numero:     document.getElementById('dNfNumero').value.trim(),
-    nf_serie:      document.getElementById('dNfSerie').value.trim()||'1',
+    nf_numero: document.getElementById('dNfNumero').value.trim(),
+    nf_serie: document.getElementById('dNfSerie').value.trim() || '1',
     nome_fantasia: document.getElementById('dNomeFantasia').value.trim(),
-    cnpj_cpf:      document.getElementById('dCnpjCpf').value.trim()||null,
-    telefone:      document.getElementById('dTelefone').value.trim()||null,
-    endereco:      document.getElementById('dEndereco').value.trim(),
-    cidade:        document.getElementById('dCidade').value.trim()||null,
-    estado:        document.getElementById('dEstado').value||null,
-    cep:           document.getElementById('dCep').value.trim()||null,
-    lat:           parseFloat(document.getElementById('dLat').value)||null,
-    lng:           parseFloat(document.getElementById('dLng').value)||null,
-    peso_kg:       parseFloat(document.getElementById('dPeso').value)||0,
-    volume_m3:     parseFloat(document.getElementById('dVolume').value)||0,
-    observacao:    document.getElementById('dObs').value.trim()||null,
+    cnpj_cpf: document.getElementById('dCnpjCpf').value.trim() || null,
+    telefone: document.getElementById('dTelefone').value.trim() || null,
+    endereco: document.getElementById('dEndereco').value.trim(),
+    cidade: document.getElementById('dCidade').value.trim() || null,
+    estado: document.getElementById('dEstado').value || null,
+    cep: document.getElementById('dCep').value.trim() || null,
+    lat: parseFloat(document.getElementById('dLat').value) || null,
+    lng: parseFloat(document.getElementById('dLng').value) || null,
+    peso_kg: parseFloat(document.getElementById('dPeso').value) || 0,
+    volume_m3: parseFloat(document.getElementById('dVolume').value) || 0,
+    observacao: document.getElementById('dObs').value.trim() || null
   };
   if (!body.nf_numero || !body.nome_fantasia || !body.endereco) {
-    alert('Preencha NF, nome do cliente e endereço.'); return;
+    alert('Preencha NF, nome do cliente e endereço.');
+    return;
   }
   try {
     if (id) {
-      const res = await fetch(`${TMS.API}/deliveries/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error('Erro ao atualizar entrega');
+      await TMS.api(`/deliveries/${id}`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
     } else {
-      const res = await fetch(`${TMS.API}/deliveries/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); if(!res.ok) throw new Error('Erro ao criar entrega');
+      await TMS.api('/deliveries/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
     }
     await load();
-  } catch {
-    alert('Não foi possível salvar a entrega.');
+    closeModal();
+    alert(id ? 'Entrega atualizada com sucesso.' : 'Entrega cadastrada com sucesso.');
+  } catch (err) {
+    console.error('Erro ao salvar entrega:', err);
+    alert(TMS.getErrorMessage(err, 'Não foi possível salvar a entrega.'));
   }
-  closeModal();
 }
 
 async function deleteDelivery(id) {
   if (!confirm('Excluir esta entrega?')) return;
-  try { const res = await fetch(`${TMS.API}/deliveries/${id}`,{method:'DELETE'}); if(!res.ok) throw new Error(); await load(); }
-  catch { alert('Não foi possível excluir a entrega.'); }
+  try {
+    await TMS.api(`/deliveries/${id}`, { method: 'DELETE' });
+    await load();
+    alert('Entrega excluída com sucesso.');
+  } catch (err) {
+    console.error('Erro ao excluir entrega:', err);
+    alert(TMS.getErrorMessage(err, 'Não foi possível excluir a entrega.'));
+  }
 }
 
 async function concluirEntrega(id) {
-  try { const res = await fetch(`${TMS.API}/deliveries/${id}/concluir`,{method:'PATCH'}); if(!res.ok) throw new Error(); await load(); }
-  catch {
-    alert('Não foi possível concluir a entrega.');
+  try {
+    await TMS.api(`/deliveries/${id}/concluir`, { method: 'PATCH' });
+    await load();
+    alert('Entrega concluída com sucesso.');
+  } catch (err) {
+    console.error('Erro ao concluir entrega:', err);
+    alert(TMS.getErrorMessage(err, 'Não foi possível concluir a entrega.'));
   }
 }
 
@@ -440,14 +461,14 @@ async function confirmarAtribuirRota() {
   const routeId = document.getElementById('selectRota').value;
   if (!routeId) { alert('Selecione uma rota.'); return; }
   try {
-    await fetch(`${TMS.API}/deliveries/${id}/atribuir-rota/${routeId}`,{method:'PATCH'});
+    await TMS.api(`/deliveries/${id}/atribuir-rota/${routeId}`, { method: 'PATCH' });
     await load();
-  } catch {
-    const d=allDeliveries.find(x=>x.id===parseInt(id));
-    if(d){d.route_id=parseInt(routeId);d.status='em_rota';}
-    renderKPIs(); filterTable();
+    closeModalRota();
+    alert('Entrega atribuída à rota com sucesso.');
+  } catch (err) {
+    console.error('Erro ao atribuir rota:', err);
+    alert(TMS.getErrorMessage(err, 'Não foi possível atribuir a rota.'));
   }
-  closeModalRota();
 }
 
 // ── Busca CEP ─────────────────────────────────────────────

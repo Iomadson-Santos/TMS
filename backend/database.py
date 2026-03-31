@@ -9,13 +9,13 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
-ENV = os.getenv("ENV", "development")
+ENV = os.getenv("ENV", "development").lower()
 
 if ENV == "production" and not DATABASE_URL:
     raise RuntimeError("DATABASE_URL não configurada em produção")
 
 if not DATABASE_URL:
-    DATABASE_URL = "mysql+pymysql://root:MagicKids#442026@hopper.proxy.rlwy.net:39498/railway"
+    DATABASE_URL = "mysql+pymysql://root:root@localhost:3306/tms_db"
 
 engine = create_engine(
     DATABASE_URL,
