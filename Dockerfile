@@ -6,12 +6,13 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
+WORKDIR /app
+
+COPY backend/ ./backend/
+
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
 WORKDIR /app/backend
-
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY backend/ .
 
 EXPOSE 8000
 
