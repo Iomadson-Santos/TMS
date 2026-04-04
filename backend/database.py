@@ -1,5 +1,4 @@
 import os
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -7,15 +6,16 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
-DEBUG = os.getenv("DEBUG", "False").lower() == "true"
-ENV = os.getenv("ENV", "development").lower()
-
-if ENV == "production" and not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL não configurada em produção")
 
 if not DATABASE_URL:
-    DATABASE_URL = "mysql+pymysql://usuario:MagicKids%402026@host:porta/banco"
+    raise RuntimeError("DATABASE_URL não configurada!")
+
+# Garante que usa o driver correto
+if DATABASE_URL.startswith("mysql://"):
+    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+mysqldb://", 1)
+
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 engine = create_engine(
     DATABASE_URL,
@@ -25,7 +25,6 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
 
 def get_db():
     db = SessionLocal()
