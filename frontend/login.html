@@ -16,6 +16,7 @@
       font-family: var(--body);
       color: var(--text);
     }
+
     .login-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -25,10 +26,12 @@
       max-width: 400px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
+
     .login-header {
       text-align: center;
       margin-bottom: 30px;
     }
+
     .login-logo {
       font-family: var(--display);
       font-size: 32px;
@@ -39,6 +42,7 @@
       gap: 10px;
       margin-bottom: 8px;
     }
+
     .login-logo .dot {
       width: 12px;
       height: 12px;
@@ -46,6 +50,7 @@
       background: var(--accent);
       box-shadow: 0 0 15px var(--accent);
     }
+
     .login-subtitle {
       font-family: var(--mono);
       font-size: 12px;
@@ -53,6 +58,7 @@
       text-transform: uppercase;
       letter-spacing: 2px;
     }
+
     .error-message {
       background: rgba(239, 68, 68, 0.1);
       border: 1px solid rgba(239, 68, 68, 0.2);
@@ -63,19 +69,23 @@
       margin-bottom: 20px;
       display: none;
     }
+
     .login-footer {
       margin-top: 24px;
       text-align: center;
       font-size: 13px;
       color: var(--text2);
     }
+
     .login-footer a {
       color: var(--accent);
       font-weight: 600;
     }
+
     .login-footer a:hover {
       text-decoration: underline;
     }
+
     .btn-block {
       width: 100%;
       justify-content: center;
@@ -89,7 +99,10 @@
 
 <div class="login-card">
   <div class="login-header">
-    <div class="login-logo"><div class="dot"></div>TMS</div>
+    <div class="login-logo">
+      <div class="dot"></div>
+      TMS
+    </div>
     <div class="login-subtitle">Gestão de Frota</div>
   </div>
 
@@ -97,14 +110,31 @@
 
   <form id="loginForm">
     <div class="form-group">
-      <label class="form-label">Usuário</label>
-      <input type="text" id="username" class="form-input" placeholder="Seu usuário" required autofocus>
+      <label class="form-label">E-mail</label>
+      <input
+        type="email"
+        id="email"
+        class="form-input"
+        placeholder="admin@tms.com"
+        required
+        autofocus
+      >
     </div>
+
     <div class="form-group">
       <label class="form-label">Senha</label>
-      <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+      <input
+        type="password"
+        id="password"
+        class="form-input"
+        placeholder="••••••••"
+        required
+      >
     </div>
-    <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Entrar no Sistema</button>
+
+    <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+      Entrar no Sistema
+    </button>
   </form>
 
   <div class="login-footer">
@@ -113,21 +143,10 @@
 </div>
 
 <script>
-  // Inicializa o layout para carregar fontes e estilos globais
-  // Mas não queremos a sidebar/topbar aqui
   TMS.initLayout('login');
-  
-  // Remove elementos de layout que não pertencem à tela de login
-  const sidebar = document.querySelector('.sidebar');
-  const mainWrap = document.querySelector('.main-wrap');
-  if (sidebar) sidebar.remove();
-  if (mainWrap) {
-    // Move o conteúdo para fora do main-wrap e remove o wrap
-    const content = mainWrap.children;
-    while(mainWrap.firstChild) {
-      document.body.appendChild(mainWrap.firstChild);
-    }
-    mainWrap.remove();
+
+  if (TMS.getToken()) {
+    window.location.href = 'index.html';
   }
 
   const loginForm = document.getElementById('loginForm');
@@ -136,39 +155,24 @@
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+
     errorBox.style.display = 'none';
+    errorBox.textContent = '';
+
     loginBtn.disabled = true;
     loginBtn.textContent = 'Autenticando...';
 
-    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
     try {
-      // O backend FastAPI usa OAuth2 password flow (form-data)
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
+      await TMS.login(email, password);
 
-      const response = await fetch(`${TMS.API}/auth/login`, {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Falha no login. Verifique suas credenciais.');
-      }
-
-      // Salva o token
-      localStorage.setItem('tms_token', data.access_token);
-      localStorage.setItem('tms_token_type', data.token_type);
-      
-      // Redireciona para o dashboard
       window.location.href = 'index.html';
     } catch (err) {
-      errorBox.textContent = err.message;
+      errorBox.textContent = err.message || 'Falha no login. Verifique suas credenciais.';
       errorBox.style.display = 'block';
+
       loginBtn.disabled = false;
       loginBtn.textContent = 'Entrar no Sistema';
     }
