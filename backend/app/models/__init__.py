@@ -9,8 +9,18 @@ from app.models.entities import (
     Vehicle,
     VehicleStatus,
 )
+from app.models.user import User, UserRole
 
 __all__ = [
-    "AuditLog", "Delivery", "DeliveryStatus", "Route", "RouteStatus",
-    "Stop", "Tracking", "Vehicle", "VehicleStatus"
+    "AuditLog",
+    "Delivery",
+    "DeliveryStatus",
+    "Route",
+    "RouteStatus",
+    "Stop",
+    "Tracking",
+    "Vehicle",
+    "VehicleStatus",
+    "User",
+    "UserRole",
 ]

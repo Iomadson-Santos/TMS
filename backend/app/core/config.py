@@ -12,6 +12,7 @@ class Settings(BaseModel):
     app_version: str = os.getenv("APP_VERSION", "2.0.0")
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./tms.db")
+
     allowed_origins: list[str] = [
         origin.strip()
         for origin in os.getenv(
@@ -20,6 +21,12 @@ class Settings(BaseModel):
         ).split(",")
         if origin.strip()
     ]
+
+    secret_key: str = os.getenv("SECRET_KEY", "troque-esta-chave-em-producao")
+    algorithm: str = os.getenv("ALGORITHM", "HS256")
+    access_token_expire_minutes: int = int(
+        os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+    )
 
 
 @lru_cache
