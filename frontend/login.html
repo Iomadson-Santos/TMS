@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TMS · Login</title>
+  <script src="tms.js"></script>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: var(--bg);
+      font-family: var(--body);
+      color: var(--text);
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .login-logo {
+      font-family: var(--display);
+      font-size: 32px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .login-logo .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      background: var(--accent);
+      box-shadow: 0 0 15px var(--accent);
+    }
+    .login-subtitle {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: var(--red);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .login-footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text2);
+    }
+    .login-footer a {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+    .btn-block {
+      width: 100%;
+      justify-content: center;
+      padding: 12px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="login-header">
+    <div class="login-logo"><div class="dot"></div>TMS</div>
+    <div class="login-subtitle">Gestão de Frota</div>
+  </div>
+
+  <div id="errorBox" class="error-message"></div>
+
+  <form id="loginForm">
+    <div class="form-group">
+      <label class="form-label">Usuário</label>
+      <input type="text" id="username" class="form-input" placeholder="Seu usuário" required autofocus>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Entrar no Sistema</button>
+  </form>
+
+  <div class="login-footer">
+    Não tem uma conta? <a href="register.html">Cadastre-se</a>
+  </div>
+</div>
+
+<script>
+  // Inicializa o layout para carregar fontes e estilos globais
+  // Mas não queremos a sidebar/topbar aqui
+  TMS.initLayout('login');
+  
+  // Remove elementos de layout que não pertencem à tela de login
+  const sidebar = document.querySelector('.sidebar');
+  const mainWrap = document.querySelector('.main-wrap');
+  if (sidebar) sidebar.remove();
+  if (mainWrap) {
+    // Move o conteúdo para fora do main-wrap e remove o wrap
+    const content = mainWrap.children;
+    while(mainWrap.firstChild) {
+      document.body.appendChild(mainWrap.firstChild);
+    }
+    mainWrap.remove();
+  }
+
+  const loginForm = document.getElementById('loginForm');
+  const errorBox = document.getElementById('errorBox');
+  const loginBtn = document.getElementById('loginBtn');
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Autenticando...';
+
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    try {
+      // O backend FastAPI usa OAuth2 password flow (form-data)
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
+
+      const response = await fetch(`${TMS.API}/auth/login`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Falha no login. Verifique suas credenciais.');
+      }
+
+      // Salva o token
+      localStorage.setItem('tms_token', data.access_token);
+      localStorage.setItem('tms_token_type', data.token_type);
+      
+      // Redireciona para o dashboard
+      window.location.href = 'index.html';
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.style.display = 'block';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Entrar no Sistema';
+    }
+  });
+</script>
+
+</body>
+</html>
