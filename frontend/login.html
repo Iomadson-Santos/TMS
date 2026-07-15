@@ -165,17 +165,21 @@
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
-    try {
-      await TMS.login(email, password);
+try {
+  const response = await TMS.login(email, password);
 
-      window.location.href = 'index.html';
-    } catch (err) {
-      errorBox.textContent = err.message || 'Falha no login. Verifique suas credenciais.';
-      errorBox.style.display = 'block';
+  if (response.user && response.user.role === 'motorista') {
+    window.location.href = 'mobile-driver.html';
+  } else {
+    window.location.href = 'index.html';
+  }
+} catch (err) {
+  errorBox.textContent = err.message || 'Falha no login. Verifique suas credenciais.';
+  errorBox.style.display = 'block';
 
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Entrar no Sistema';
-    }
+  loginBtn.disabled = false;
+  loginBtn.textContent = 'Entrar no Sistema';
+}
   });
 </script>
 

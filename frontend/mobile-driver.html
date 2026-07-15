@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TMS · Motorista</title>
+  <script src="tms.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      min-height: 100vh;
+    }
+
+    .driver-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .driver-title {
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .driver-subtitle {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    .driver-page {
+      padding: 16px;
+    }
+
+    .driver-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .driver-card-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .driver-main-text {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .driver-text {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 6px;
+    }
+
+    .driver-actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .driver-btn {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      background: var(--accent);
+    }
+
+    .driver-btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .driver-btn-danger {
+      background: var(--red);
+    }
+  </style>
+</head>
+<body>
+
+<header class="driver-header">
+  <div class="driver-title">Área do Motorista</div>
+  <div class="driver-subtitle" id="driverUser">Carregando usuário...</div>
+</header>
+
+<main class="driver-page">
+  <div class="driver-card">
+    <div class="driver-card-title">Status</div>
+    <div class="driver-main-text">Tela mobile em construção</div>
+    <div class="driver-text">
+      Aqui o motorista verá as rotas, entregas e ações operacionais.
+    </div>
+  </div>
+
+  <div class="driver-card">
+    <div class="driver-card-title">Próximas funções</div>
+    <div class="driver-text">
+      • Ver rota atribuída<br>
+      • Ver entregas da rota<br>
+      • Concluir parada<br>
+      • Concluir entrega<br>
+      • Enviar localização
+    </div>
+  </div>
+
+  <div class="driver-actions">
+    <button class="driver-btn driver-btn-secondary" onclick="window.location.href='index.html'">
+      Abrir sistema completo
+    </button>
+
+    <button class="driver-btn driver-btn-danger" onclick="TMS.logout()">
+      Sair
+    </button>
+  </div>
+</main>
+
+<script>
+  TMS.initLayout('login');
+
+  async function loadDriver() {
+    const user = await TMS.getMe();
+
+    if (!user) {
+      TMS.logout();
+      return;
+    }
+
+    document.getElementById('driverUser').textContent =
+      `${user.nome || user.email} · ${user.role}`;
+  }
+
+  loadDriver();
+</script>
+
+</body>
+</html>

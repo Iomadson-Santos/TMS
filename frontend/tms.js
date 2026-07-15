@@ -347,50 +347,71 @@ const TMS = {
       setInterval(tick, 1000);
     }
 
-    this.getMe().then(user => {
-      if (!user) {
-        this.logout();
-        return;
-      }
+ this.getMe().then(user => {
+  if (!user) {
+    this.logout();
+    return;
+  }
 
-      const displayName = user.nome || user.email || 'Usuário';
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-      const userNameEl = document.getElementById('userName');
-      const userRoleEl = document.getElementById('userRole');
-      const userAvatarEl = document.getElementById('userAvatar');
+  const blockedForDriver = [
+    'index.html',
+    'vehicles.html',
+    'routes.html',
+    'deliveries.html',
+    'tracking.html',
+    'audit.html',
+  ];
 
-      if (userNameEl) userNameEl.textContent = displayName;
-      if (userRoleEl) userRoleEl.textContent = user.role;
-      if (userAvatarEl) userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+  if (
+    user.role === 'motorista' &&
+    blockedForDriver.includes(currentPage)
+  ) {
+    window.location.href = 'mobile-driver.html';
+    return;
+  }
 
-      const navContainer = document.getElementById('nav-items-container');
+  const displayName = user.nome || user.email || 'Usuário';
 
-      if (navContainer) {
-        navContainer.innerHTML = pages
-          .filter(p => !p.role || p.role === user.role)
-          .map(
-            p => `
-              <a href="${p.href}" class="nav-item ${activePage === p.id ? 'active' : ''}">
-                <span class="nav-icon">${p.icon}</span>
-                <span>${p.label}</span>
-              </a>
-            `
-          )
-          .join('');
-      }
+  const userNameEl = document.getElementById('userName');
+  const userRoleEl = document.getElementById('userRole');
+  const userAvatarEl = document.getElementById('userAvatar');
 
-      document.querySelectorAll('[data-role-required]').forEach(el => {
-        const allowedRoles = el.dataset.roleRequired
-          .split(',')
-          .map(role => role.trim());
+  if (userNameEl) userNameEl.textContent = displayName;
+  if (userRoleEl) userRoleEl.textContent = user.role;
+  if (userAvatarEl) {
+    userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+  }
 
-        if (allowedRoles.includes(user.role)) {
-          el.style.display = '';
-        } else {
-          el.remove();
-        }
-      });
-    });
+  const navContainer = document.getElementById('nav-items-container');
+
+  if (navContainer) {
+    navContainer.innerHTML = pages
+      .filter(p => !p.role || p.role === user.role)
+      .map(
+        p => `
+          <a href="${p.href}" class="nav-item ${activePage === p.id ? 'active' : ''}">
+            <span class="nav-icon">${p.icon}</span>
+            <span>${p.label}</span>
+          </a>
+        `
+      )
+      .join('');
+  }
+
+  document.querySelectorAll('[data-role-required]').forEach(el => {
+    const allowedRoles = el.dataset.roleRequired
+      .split(',')
+      .map(role => role.trim());
+
+    if (allowedRoles.includes(user.role)) {
+      el.style.display = '';
+    } else {
+      el.remove();
+    }
+  });
+});
 
     this.api('/health')
       .then(() => {
