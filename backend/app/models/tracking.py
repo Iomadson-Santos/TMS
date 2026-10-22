@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Float, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, utc_now
+
+if TYPE_CHECKING:
+    from app.models.route import Route
+    from app.models.user import User
+    from app.models.vehicle import Vehicle
 
 
 class TrackingPosition(TimestampMixin, Base):

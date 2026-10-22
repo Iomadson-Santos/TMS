@@ -1,4 +1,4 @@
-# SHA-256 manifest - TMS Ciranda 1.0.0-rc1
+# SHA-256 manifest - TMS Ciranda 1.0.0-rc1.1
 # Gerado em 2026-10-21; RELEASE_MANIFEST_SHA256.txt excluido do proprio calculo.
 5718d9a65ab80bdb472fd8d60103386c82ad77dc49703f447b8284ea5429fc4c  ./.github/dependabot.yml
 f6894632c63d28859a26d76acd8c9eed1890a2a0904bfecd56410737906dffea  ./.github/workflows/ci.yml
@@ -10,9 +10,10 @@ e72b03ed5b70312f2782f2b05055c55b24670e126d50e24c4f2c559bf288f810  ./.python-vers
 99beda566e1e67f01abcb35003a1712047a3868243fb605ad3a5ac632bcac4a0  ./ATUALIZACAO_0.1.4.1.md
 68c6a3dd490c881be00f6b6e6a98b765d3645a17ab2c05ef0f51a6fcbfc6bd40  ./ATUALIZACAO_0.1.4.md
 57afbc02b0a03949fc30e5619c4d39b96b465679e3ab31522e50da9c79a5275e  ./ATUALIZACAO_RESET_ADMIN_0.1.4.2.md
-8ae5d721a2f3ea6e421b9dab9532812a25545cf31cfef56f3a46c68244845b9a  ./CHANGELOG.md
+3e951b832256c91ebb69f4c0da094ad799244a10826eb6c02515a17deea42e4f  ./CHANGELOG.md
 6f2708da87bef6452ce3bb3b446bc77b0f8758f0fb65d0ce761d10e00981abd9  ./CHECKLIST_HOMOLOGACAO_PRODUCAO.md
 81f8aea1979b371754e52b163534fbc9689716f6363c3418bb600d50469eda46  ./COMECE_AQUI_PRODUCAO.md
+1605c666c6a442c984f382280e984ce2da65e3b595495142fb700c9e952d0497  ./CORRECAO_RUFF_RC1.md
 68aa6fc2c5df1e7fa43eda7752498fa7821b389be3acb8e19d250c92f1c58049  ./DEPLOY_PRODUCTION.md
 82ee1e32e9e68d2c423d28bb0c14899e357b8003ed0e8b9b045c79ddd4a2efef  ./DEPLOY_RENDER_PASSO_A_PASSO.md
 b323fbbd083d2fc34a0ef117a9271bd6fb2d56d2a565be98f4888c5a5b989377  ./RASTREAMENTO.md
@@ -42,15 +43,15 @@ da300196ef1c41ed47c132ec6cbe2b10174159414024465b31005bac08929b60  ./backend/app/
 67fafe170acc427155cdb29e585a719693110294ec58c1a776dbda9fc06d0de0  ./backend/app/core/security.py
 2fc7b7275b0b835f10284c14590b5737d2087ac5a2d1cc6e1b7c480a4115fbc6  ./backend/app/main.py
 a27923ad1b2985c9b78b46927d52cdea1855b5d33aa6a68091ee0fa3b6157105  ./backend/app/models/__init__.py
-8f23762e778c7a757b14b5a0a986c187f4859a5ad933a5f85db3ecc729b7d6d4  ./backend/app/models/audit.py
-3c0922154f3a89fc955e29794064955333a8a05ed2b53caa3bbd41b2ba82b4e9  ./backend/app/models/auth.py
+3ace28ed9faff69b9d2a388a78bbc6e468cac4171a512cc738078fe4d9345199  ./backend/app/models/audit.py
+33850bcc89f05e027c7e0ee76bf527f8e8cc7955312973f3d18552605b3b4f0e  ./backend/app/models/auth.py
 49306829f83c2f60b6dcb4b6f73c05c0c887762c300e57a12ac0ab4e69fff8af  ./backend/app/models/base.py
-dc5ef1770e141da3a8c8dea463fa8d81af70250815dff951c5fd70c57db86290  ./backend/app/models/delivery.py
+ec43f0cd8a9db1c1c9bd29000602e65b21c6d279df5be8353865999cdf268158  ./backend/app/models/delivery.py
 4e67e44e3056cda35aa6a88e9622bfe58e2a4f6a2fe21ecf97ccc7207b27fe30  ./backend/app/models/enums.py
-a7b92bbc8fc16a63e3a42643e01de2265cb46ff1d901ddcee00d7685431fe41a  ./backend/app/models/route.py
-32733a462502d812c885dc80906389bf44e643adafbd956f12255def59882443  ./backend/app/models/tracking.py
-15ae68c88f37a59857d1e0819a0d6c8cf09a5c768d57c45f8bd838c2417be54b  ./backend/app/models/user.py
-951288bd394d5662e60c846703fe860a782c7deadf6636cb0ce44fc90e7c8448  ./backend/app/models/vehicle.py
+628932f8d44ab95b0a30f4f686b6d48533438a80b6c1561d1d14b663ad3a361b  ./backend/app/models/route.py
+532815ea4392cc8269dc771df1e7049e3c49b115fa3186539bad77043c3c4975  ./backend/app/models/tracking.py
+02c2d4d5b40e666e7a3364e3376d65aa0fdffb0c361a9c279bf61775cb585e68  ./backend/app/models/user.py
+543bf4d31e8f20aa042b9887d809f5e9774b33c66f844b5dc85ef2e071aa51a9  ./backend/app/models/vehicle.py
 0eff2211d8794428e974b4ac5bfb28bf05363b43efadc9715b04bbfb65c4fa93  ./backend/app/routers/__init__.py
 44cffe3a9863ad7645aaf31068207e8900691d16f50cbd3abec60138688d7c9a  ./backend/app/routers/audit.py
 bda9912b1d83623ef3c6dd038ee2c4b1727657a31dd307249811fb152e1e38dd  ./backend/app/routers/auth.py

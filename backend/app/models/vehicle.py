@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 from app.models.enums import VehicleStatus
+
+if TYPE_CHECKING:
+    from app.models.route import Route
+    from app.models.tracking import TrackingPosition
 
 
 class Vehicle(TimestampMixin, Base):

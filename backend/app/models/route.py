@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Date,
@@ -19,6 +20,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 from app.models.enums import RouteStatus
+
+if TYPE_CHECKING:
+    from app.models.delivery import Delivery
+    from app.models.tracking import TrackingPosition
+    from app.models.user import User
+    from app.models.vehicle import Vehicle
 
 
 class Route(TimestampMixin, Base):

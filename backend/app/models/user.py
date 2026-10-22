@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Enum as SAEnum, Index, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 from app.models.enums import UserRole
+
+if TYPE_CHECKING:
+    from app.models.audit import AuditLog
+    from app.models.auth import AuthSession
+    from app.models.route import Route
+    from app.models.tracking import TrackingPosition
 
 
 class User(TimestampMixin, Base):

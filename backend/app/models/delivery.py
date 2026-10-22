@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum as SAEnum, Float, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 from app.models.enums import DeliveryStatus
+
+if TYPE_CHECKING:
+    from app.models.route import Route
 
 
 class Delivery(TimestampMixin, Base):

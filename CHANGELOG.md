@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-rc1.1 — correcao do CI Ruff
+
+- Adicionadas importacoes protegidas por `TYPE_CHECKING` nos modelos SQLAlchemy.
+- Corrigidas as 18 referencias de tipos que o Ruff classificava como `F821`.
+- Nenhuma alteracao de banco, endpoint, regra operacional ou dependencia.
+
 ## 1.0.0-rc1 — preparacao para homologacao e producao
 
 - Blueprints separados para homologacao e producao no Render.
