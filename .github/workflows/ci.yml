@@ -1,0 +1,84 @@
+name: TMS - qualidade e seguranca
+
+on:
+  push:
+    branches: [main, develop, production-v1]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tms-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Testes, lint e auditoria
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Obter codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.5"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Instalar dependencias
+        run: python -m pip install --upgrade pip && python -m pip install -r backend/requirements-dev.txt
+
+      - name: Compilar Python
+        working-directory: backend
+        run: python -m compileall -q app tests alembic
+
+      - name: Executar testes
+        working-directory: backend
+        env:
+          PYTHONPATH: .
+        run: python -m pytest -q
+
+      - name: Verificar qualidade com Ruff
+        working-directory: backend
+        run: python -m ruff check app tests alembic --select E9,F63,F7,F82
+
+      - name: Analise estatica de seguranca
+        working-directory: backend
+        run: python -m bandit -q -ll -r app -x tests -s B105,B106,B107
+
+      - name: Auditar dependencias Python
+        working-directory: backend
+        run: python -m pip_audit -r requirements.txt
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verificar sintaxe JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in frontend/assets/js/*.js; do
+            node --check "$file"
+          done
+
+      - name: Validar arquivos YAML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          for filename in ("render.yaml", "render.staging.yaml", ".github/workflows/ci.yml"):
+              path = Path(filename)
+              with path.open("r", encoding="utf-8") as handle:
+                  yaml.safe_load(handle)
+              print(f"YAML valido: {filename}")
+          PY

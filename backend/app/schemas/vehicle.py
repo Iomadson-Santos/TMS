@@ -1,23 +1,31 @@
 from datetime import datetime
+from decimal import Decimal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
-from app.models import VehicleStatus
-from app.schemas.common import ORMModel
+from app.models.enums import VehicleStatus
+from app.schemas.base import ORMModel
 
 
 class VehicleBase(ORMModel):
-    placa: str = Field(min_length=7, max_length=10)
-    modelo: str = Field(min_length=2, max_length=100)
-    tipo: str = Field(min_length=2, max_length=50)
-    capacidade_kg: float = Field(gt=0)
-    motorista: str | None = None
-    telefone_motorista: str | None = None
+    plate: str = Field(min_length=7, max_length=10)
+    brand: str | None = Field(default=None, max_length=80)
+    model: str = Field(min_length=2, max_length=120)
+    year: int | None = Field(default=None, ge=1950, le=2100)
+    capacity_kg: Decimal | None = Field(default=None, ge=0, le=9_999_999_999)
+    capacity_m3: Decimal | None = Field(default=None, ge=0, le=9_999_999)
+    current_km: int = Field(default=0, ge=0, le=2_000_000_000)
+    status: VehicleStatus = VehicleStatus.AVAILABLE
 
-    @field_validator("placa")
+    @field_validator("plate", mode="before")
     @classmethod
     def normalize_plate(cls, value: str) -> str:
-        return value.strip().upper().replace("-", "")
+        return value.strip().upper().replace("-", "") if isinstance(value, str) else value
+
+    @field_validator("brand", "model", mode="before")
+    @classmethod
+    def strip_text(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
 
 
 class VehicleCreate(VehicleBase):
@@ -25,19 +33,35 @@ class VehicleCreate(VehicleBase):
 
 
 class VehicleUpdate(ORMModel):
-    modelo: str | None = None
-    tipo: str | None = None
-    capacidade_kg: float | None = Field(default=None, gt=0)
+    plate: str | None = Field(default=None, min_length=7, max_length=10)
+    brand: str | None = Field(default=None, max_length=80)
+    model: str | None = Field(default=None, min_length=2, max_length=120)
+    year: int | None = Field(default=None, ge=1950, le=2100)
+    capacity_kg: Decimal | None = Field(default=None, ge=0, le=9_999_999_999)
+    capacity_m3: Decimal | None = Field(default=None, ge=0, le=9_999_999)
+    current_km: int | None = Field(default=None, ge=0, le=2_000_000_000)
     status: VehicleStatus | None = None
-    motorista: str | None = None
-    telefone_motorista: str | None = None
-    lat_atual: float | None = Field(default=None, ge=-90, le=90)
-    lng_atual: float | None = Field(default=None, ge=-180, le=180)
+
+    @field_validator("plate", mode="before")
+    @classmethod
+    def normalize_plate(cls, value: str | None) -> str | None:
+        return value.strip().upper().replace("-", "") if isinstance(value, str) else value
+
+    @field_validator("brand", "model", mode="before")
+    @classmethod
+    def strip_text(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def reject_null_required_fields(self):
+        required = {"plate", "model", "current_km", "status"}
+        for field in required.intersection(self.model_fields_set):
+            if getattr(self, field) is None:
+                raise ValueError(f"{field} nao pode ser nulo")
+        return self
 
 
-class VehicleOut(VehicleBase):
+class VehicleRead(VehicleBase):
     id: int
-    status: VehicleStatus
-    lat_atual: float
-    lng_atual: float
-    criado_em: datetime
+    created_at: datetime
+    updated_at: datetime

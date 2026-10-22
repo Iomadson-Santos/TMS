@@ -1,0 +1,49 @@
+# Changelog
+
+## 1.0.0-rc1 — preparacao para homologacao e producao
+
+- Blueprints separados para homologacao e producao no Render.
+- PostgreSQL gerenciado com acesso publico bloqueado no Blueprint.
+- URL PostgreSQL do provedor normalizada para o driver psycopg 3.
+- Migracoes e verificacao completa executadas no pre-deploy de producao.
+- Health check de prontidao com consulta real ao banco.
+- HTTPS externo gerenciado pela plataforma sem redirecionar internamente o health check.
+- Criacao idempotente e segura do primeiro administrador, com troca obrigatoria de senha.
+- GitHub Actions com testes, Ruff, Bandit, pip-audit e validacao JavaScript/YAML.
+- Dependabot semanal para dependencias Python e GitHub Actions.
+- Leaflet 1.9.4 fixado com Subresource Integrity (SRI); qualquer arquivo divergente e rejeitado pelo navegador.
+- Teste online nao destrutivo para HTTPS, cabecalhos, banco, login, sessao e logout.
+- Corrigida uma condicao duplicada que impediria o preflight de producao de compilar.
+
+## 0.1.4.1
+
+- Corrigido o bloqueio 403 dos tiles do OpenStreetMap no monitor de rastreamento.
+- Ajustado o cabeçalho Referrer-Policy somente na página de rastreamento, sem expor caminhos ou parâmetros a terceiros.
+- Atualizada a URL oficial de tiles e a política CSP.
+
+## 0.1.4 — Security Hardened
+
+- Limite persistente de tentativas: terceira falha bloqueia por 30 segundos, com progressão até 300 segundos.
+- Limite adicional por IP e proteção da reautenticação para troca de senha.
+- Mensagens genéricas de autenticação e hash fictício para reduzir enumeração por tempo.
+- Cookies HttpOnly, access token curto, refresh opaco rotativo e revogação persistida.
+- CSRF assinado, validação de origem e cabeçalhos de segurança.
+- Troca obrigatória de senha e invalidação de sessões em mudanças sensíveis.
+- Alteração da própria senha exige reautenticação; o cadastro administrativo não pode contornar essa confirmação.
+- Preflight de produção, `.env.production.example` e scripts de execução endurecida; `--config-only` funciona antes da conexão com PostgreSQL.
+- Limite de corpo, validação de entrada e sanitização de erros.
+- Rotação de logs, backup e scripts de análise automatizada.
+- Migrações `0003_security` e `0004_sessions`.
+
+## 0.1.3
+
+- Rastreamento GPS e monitor administrativo.
+- Uma rota em andamento por motorista/veículo.
+
+## 0.1.2
+
+- Aplicativo web mobile do motorista.
+
+## 0.1.1
+
+- Sincronização e idempotência de status de rota.

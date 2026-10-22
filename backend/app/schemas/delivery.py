@@ -1,26 +1,42 @@
 from datetime import datetime
+from decimal import Decimal
 
-from pydantic import Field
+from pydantic import Field, field_validator, model_validator
 
-from app.models import DeliveryStatus
-from app.schemas.common import ORMModel
+from app.models.enums import DeliveryStatus
+from app.schemas.base import ORMModel
 
 
 class DeliveryBase(ORMModel):
-    nf_numero: str = Field(min_length=1, max_length=20)
-    nf_serie: str = "1"
-    nome_fantasia: str = Field(min_length=2, max_length=150)
-    cnpj_cpf: str | None = None
-    telefone: str | None = None
-    endereco: str = Field(min_length=3, max_length=255)
-    cidade: str | None = None
-    estado: str | None = Field(default=None, min_length=2, max_length=2)
-    cep: str | None = None
-    lat: float | None = Field(default=None, ge=-90, le=90)
-    lng: float | None = Field(default=None, ge=-180, le=180)
-    peso_kg: float = Field(default=0, ge=0)
-    volume_m3: float = Field(default=0, ge=0)
-    observacao: str | None = None
+    invoice_number: str = Field(min_length=1, max_length=60)
+    customer_name: str = Field(min_length=2, max_length=180)
+    customer_document: str | None = Field(default=None, max_length=30)
+    address: str = Field(min_length=4, max_length=255)
+    city: str = Field(min_length=2, max_length=100)
+    state: str = Field(min_length=2, max_length=2)
+    postal_code: str | None = Field(default=None, max_length=12)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    weight_kg: Decimal | None = Field(default=None, ge=0, le=9_999_999_999)
+    volume_m3: Decimal | None = Field(default=None, ge=0, le=9_999_999)
+    invoice_value: Decimal | None = Field(default=None, ge=0, le=999_999_999_999)
+    freight_value: Decimal | None = Field(default=None, ge=0, le=999_999_999_999)
+    status: DeliveryStatus = DeliveryStatus.PENDING
+
+    @field_validator("invoice_number", "customer_name", "address", "city", mode="before")
+    @classmethod
+    def strip_required_text(cls, value: str) -> str:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("customer_document", "postal_code", mode="before")
+    @classmethod
+    def strip_optional_text(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def normalize_state(cls, value: str) -> str:
+        return value.strip().upper() if isinstance(value, str) else value
 
 
 class DeliveryCreate(DeliveryBase):
@@ -28,27 +44,56 @@ class DeliveryCreate(DeliveryBase):
 
 
 class DeliveryUpdate(ORMModel):
-    nf_numero: str | None = None
-    nf_serie: str | None = None
-    nome_fantasia: str | None = None
-    cnpj_cpf: str | None = None
-    telefone: str | None = None
-    endereco: str | None = None
-    cidade: str | None = None
-    estado: str | None = None
-    cep: str | None = None
-    lat: float | None = Field(default=None, ge=-90, le=90)
-    lng: float | None = Field(default=None, ge=-180, le=180)
-    peso_kg: float | None = Field(default=None, ge=0)
-    volume_m3: float | None = Field(default=None, ge=0)
+    invoice_number: str | None = Field(default=None, min_length=1, max_length=60)
+    customer_name: str | None = Field(default=None, min_length=2, max_length=180)
+    customer_document: str | None = Field(default=None, max_length=30)
+    address: str | None = Field(default=None, min_length=4, max_length=255)
+    city: str | None = Field(default=None, min_length=2, max_length=100)
+    state: str | None = Field(default=None, min_length=2, max_length=2)
+    postal_code: str | None = Field(default=None, max_length=12)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    weight_kg: Decimal | None = Field(default=None, ge=0, le=9_999_999_999)
+    volume_m3: Decimal | None = Field(default=None, ge=0, le=9_999_999)
+    invoice_value: Decimal | None = Field(default=None, ge=0, le=999_999_999_999)
+    freight_value: Decimal | None = Field(default=None, ge=0, le=999_999_999_999)
     status: DeliveryStatus | None = None
-    route_id: int | None = None
-    observacao: str | None = None
+
+    @field_validator("invoice_number", "customer_name", "address", "city", mode="before")
+    @classmethod
+    def strip_required_text(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("customer_document", "postal_code", mode="before")
+    @classmethod
+    def strip_optional_text(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def normalize_state(cls, value: str | None) -> str | None:
+        return value.strip().upper() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def reject_null_required_fields(self):
+        required = {
+            "invoice_number",
+            "customer_name",
+            "address",
+            "city",
+            "state",
+            "status",
+        }
+        for field in required.intersection(self.model_fields_set):
+            if getattr(self, field) is None:
+                raise ValueError(f"{field} nao pode ser nulo")
+        return self
 
 
-class DeliveryOut(DeliveryBase):
+class DeliveryRead(DeliveryBase):
     id: int
-    status: DeliveryStatus
-    route_id: int | None = None
-    criado_em: datetime
-    atualizado_em: datetime | None = None
+    route_id: int | None
+    sequence: int | None
+    delivered_at: datetime | None
+    created_at: datetime
+    updated_at: datetime

@@ -1,569 +1,92 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TMS · Rotas</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="tms.js"></script>
-  <style>
-    .map-box{height:320px;border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:20px;}
-    .leaflet-container{background:#0d1117 !important;}
-    .leaflet-tile{filter:none !important;}
-    .stop-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
-    .stop-row input{flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;padding:7px 10px;outline:none;}
-    .stop-row input:focus{border-color:var(--accent);}
-    .stop-row input.small{flex:0.8;}
-    .btn-add-stop{background:transparent;border:1px dashed var(--border);color:var(--text3);border-radius:7px;padding:8px;font-size:12px;width:100%;margin-bottom:14px;transition:all .15s;}
-    .btn-add-stop:hover{border-color:var(--accent);color:var(--accent);}
-    .btn-rm{background:transparent;border:none;color:var(--red);font-size:14px;padding:4px 6px;border-radius:4px;}
-    .result-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;display:none;}
-    .result-box.show{display:block;}
-    .result-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-    .result-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-    .result-val{font-family:var(--mono);color:var(--accent);}
-    .delivery-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all .15s;}
-    .delivery-item:hover{border-color:var(--accent);}
-    .delivery-item.selected{border-color:var(--accent);background:rgba(59,130,246,.08);}
-    .delivery-item input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;flex-shrink:0;}
-    .delivery-nf{font-family:var(--mono);font-size:11px;color:var(--text3);}
-    .delivery-client{font-size:13px;font-weight:600;}
-    .delivery-addr{font-size:11px;color:var(--text3);}
-    .delivery-kg{font-family:var(--mono);font-size:11px;color:var(--yellow);margin-left:auto;white-space:nowrap;}
-    .geo-status{font-size:10px;font-family:var(--mono);margin-left:6px;}
-    .geo-ok{color:var(--green);}
-    .geo-fail{color:var(--red);}
-    .geo-loading{color:var(--yellow);}
-    .progress-bar{height:4px;background:var(--surface3);border-radius:2px;margin:10px 0;overflow:hidden;}
-    .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
-    .step-label{font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:6px;}
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rotas | TMS</title>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=1.0.0-rc1" />
 </head>
 <body>
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <section class="app-main">
+      <header id="topbar"></header>
+      <main class="page">
+        <div class="page-header">
+          <div><h1>Rotas</h1><p>Monte cargas, ordene paradas e acompanhe a execução das viagens.</p></div>
+          <div class="actions">
+            <button id="refreshRoutes" class="btn btn-light" type="button">↻ Atualizar</button>
+            <button id="newRouteButton" class="btn btn-primary" type="button">＋ Nova rota</button>
+          </div>
+        </div>
 
-<div class="topbar">
-  <div>
-    <span class="topbar-title">Rotas</span>
-    <span class="topbar-breadcrumb">/ roteirização</span>
+        <section class="stats-grid">
+          <article class="stat-card"><div class="stat-label">Total</div><div id="routeTotal" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Abertas</div><div id="routeOpen" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Em andamento</div><div id="routeProgress" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Concluídas</div><div id="routeDone" class="stat-value">0</div></article>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>Rotas cadastradas</h2>
+            <div class="filters">
+              <input id="routeSearch" class="control search-control" type="search" placeholder="Buscar rota, placa ou motorista" />
+              <select id="routeStatusFilter" class="control"><option value="">Todos os status</option><option value="aberta">Aberta</option><option value="em_andamento">Em andamento</option><option value="concluida">Concluida</option><option value="cancelada">Cancelada</option></select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" style="min-width: 1150px">
+              <thead><tr><th>ID</th><th>Rota/Data</th><th>Veículo</th><th>Motorista</th><th>Entregas</th><th>Distância</th><th>Status</th><th>Criação</th><th>Ações</th></tr></thead>
+              <tbody id="routesBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </section>
   </div>
-  <div class="topbar-right">
-    <span class="topbar-time" id="clock"></span>
-    <button class="btn btn-secondary" onclick="openAutoModal()" style="margin-right:8px">🚀 Roteirizar Entregas</button>
-    <button class="btn btn-primary" onclick="openModal()">+ Nova Rota Manual</button>
-  </div>
-</div>
 
-<div class="page">
-  <div class="page-header">
-    <div>
-      <div class="page-title">Rotas</div>
-      <div class="page-sub" id="routesSub">Carregando...</div>
-    </div>
-  </div>
-  <div class="grid-4" style="margin-bottom:20px" id="kpiRow"></div>
-  <div class="map-box" id="map"></div>
-  <div class="card">
-    <div class="toolbar">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="search-input" type="text" id="searchInput" placeholder="Buscar por nome da rota..." oninput="filterTable()"/>
-      </div>
-      <select class="filter-select" id="filterStatus" onchange="filterTable()">
-        <option value="">Todos os status</option>
-        <option value="planejada">Planejada</option>
-        <option value="em_andamento">Em Andamento</option>
-        <option value="concluida">Concluída</option>
-        <option value="cancelada">Cancelada</option>
-      </select>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th onclick="sortTable('nome')" style="cursor:pointer">Nome ↕</th>
-            <th>Status</th>
-            <th onclick="sortTable('distancia_km')" style="cursor:pointer">Distância ↕</th>
-            <th>Tempo Est.</th>
-            <th>Carga</th>
-            <th>Paradas</th>
-            <th>Criada em</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="routeTableBody"></tbody>
-      </table>
-    </div>
-    <div id="tableFooter" style="padding:12px 14px;font-size:11px;color:var(--text3);font-family:var(--mono);border-top:1px solid var(--border)"></div>
-  </div>
-</div>
+  <div id="routeModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal large">
+      <div class="modal-header"><h2>Nova rota</h2><button class="icon-button" type="button" data-close-modal="routeModal">×</button></div>
+      <form id="routeForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="field"><label for="routeName">Nome da rota *</label><input id="routeName" maxlength="140" placeholder="Ex.: Grande Sao Paulo 01" required /></div>
+            <div class="field"><label for="routeVehicle">Veículo *</label><select id="routeVehicle" required></select></div>
+            <div class="field"><label for="routeDriver">Motorista</label><select id="routeDriver"></select></div>
+            <div class="field"><label for="routeScheduledDate">Data prevista</label><input id="routeScheduledDate" type="date" /></div>
+            <div class="field full"><label for="routeNotes">Observações</label><textarea id="routeNotes" maxlength="2000"></textarea></div>
+          </div>
 
-<!-- Modal Roteirização Automática -->
-<div class="modal-backdrop" id="modalAuto">
-  <div class="modal" style="width:600px">
-    <div class="modal-header">
-      <div class="modal-title">🚀 Roteirizar Entregas Automaticamente</div>
-      <button class="modal-close" onclick="closeAutoModal()">✕</button>
-    </div>
-
-    <div id="stepFiltro">
-      <div style="font-size:11px;font-family:var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Passo 1 — Filtrar Entregas</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Filtrar por Cidade</label>
-          <input type="text" class="form-input" id="autoCidade" placeholder="Ex: São Paulo"/>
+          <div style="display:flex; justify-content:space-between; gap:12px; margin:22px 0 10px; flex-wrap:wrap">
+            <strong>Entregas disponíveis — <span id="selectedDeliveryCounter" class="selected-counter">0 selecionadas</span></strong>
+            <span id="routeDistancePreview" class="muted small"></span>
+          </div>
+          <div class="delivery-picker">
+            <div class="delivery-picker-toolbar">
+              <input id="routeDeliverySearch" class="control search-control" type="search" placeholder="Buscar NF, cliente, cidade ou endereço" />
+              <button id="selectVisibleDeliveries" class="btn btn-light btn-sm" type="button">Selecionar visíveis</button>
+              <button id="clearSelectedDeliveries" class="btn btn-light btn-sm" type="button">Limpar</button>
+              <button id="optimizeSelectionButton" class="btn btn-light btn-sm" type="button">Otimizar ordem</button>
+            </div>
+            <div id="routeDeliveryList" class="delivery-picker-list"></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Filtrar por Estado</label>
-          <select class="form-select" id="autoEstado">
-            <option value="">Todos</option>
-            <option value="SP">SP</option><option value="RJ">RJ</option>
-            <option value="MG">MG</option><option value="RS">RS</option>
-            <option value="PR">PR</option><option value="SC">SC</option>
-            <option value="BA">BA</option><option value="GO">GO</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn btn-secondary" style="width:100%;margin-bottom:14px" onclick="buscarEntregasPendentes()">🔍 Buscar Entregas Pendentes</button>
-      <div id="autoDeliveryList" style="max-height:260px;overflow-y:auto;display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="autoCount">0 entregas</span>
-          <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="toggleAll()">Selecionar Todas</button>
-        </div>
-        <div id="deliveryCheckList"></div>
-      </div>
-    </div>
-
-    <div id="stepConfig" style="display:none">
-      <div style="font-size:11px;font-family:var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Passo 2 — Configurar Rota</div>
-      <div class="form-group">
-        <label class="form-label">Nome da Rota</label>
-        <input type="text" class="form-input" id="autoNomeRota" placeholder="Ex: Rota SP Centro - 15/03"/>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Veículo</label>
-          <select class="form-select" id="autoVehicle"><option value="">Selecione...</option></select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Endereço de Origem</label>
-          <input type="text" class="form-input" id="autoOrigem" placeholder="Armazém Central, São Paulo"/>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Lat. Origem</label>
-          <input type="number" class="form-input" id="autoOrigemLat" placeholder="-23.5505" step="0.0001"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Lng. Origem</label>
-          <input type="number" class="form-input" id="autoOrigemLng" placeholder="-46.6333" step="0.0001"/>
-        </div>
-      </div>
-      <div id="geoProgress" style="display:none">
-        <div class="step-label" id="geoLabel">Buscando coordenadas...</div>
-        <div class="progress-bar"><div class="progress-fill" id="geoFill" style="width:0%"></div></div>
-      </div>
-      <div class="result-box" id="autoResultBox">
-        <div class="form-label" style="color:var(--green);margin-bottom:10px">✓ Rota Otimizada</div>
-        <div class="result-row"><span>Distância Total</span><span class="result-val" id="autoResDistancia">—</span></div>
-        <div class="result-row"><span>Tempo Estimado</span><span class="result-val" id="autoResTempo">—</span></div>
-        <div class="result-row"><span>Entregas</span><span class="result-val" id="autoResParadas">—</span></div>
-        <div class="result-row"><span>Carga Total</span><span class="result-val" id="autoResCarga">—</span></div>
-        <div style="color:var(--green);font-family:var(--mono);font-size:12px;margin-top:6px" id="autoResEconomia"></div>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeAutoModal()">Cancelar</button>
-      <button class="btn btn-secondary" id="btnProximo" onclick="irParaConfig()" style="display:none">Próximo →</button>
-      <button class="btn btn-secondary" id="btnVoltar" onclick="voltarFiltro()" style="display:none">← Voltar</button>
-      <button class="btn btn-secondary" id="btnGeocod" onclick="geocodificarEOtimizar()" style="display:none">⚡ Geocodificar e Otimizar</button>
-      <button class="btn btn-primary" id="btnSalvarAuto" onclick="salvarRotaAuto()" style="display:none">💾 Salvar Rota</button>
+        <div class="modal-footer"><button class="btn btn-light" type="button" data-close-modal="routeModal">Cancelar</button><button id="saveRouteButton" class="btn btn-primary" type="submit">Criar rota</button></div>
+      </form>
     </div>
   </div>
-</div>
 
-<!-- Modal Rota Manual -->
-<div class="modal-backdrop" id="modal">
-  <div class="modal" style="width:560px">
-    <div class="modal-header">
-      <div class="modal-title">Nova Rota Manual</div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Nome da Rota *</label>
-      <input type="text" class="form-input" id="rNome" placeholder="Ex: Rota Centro - Manhã"/>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Veículo *</label>
-        <select class="form-select" id="rVehicle"><option value="">Selecione...</option></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Endereço de Origem *</label>
-        <input type="text" class="form-input" id="rOrigem" placeholder="Armazém Central"/>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Lat. Origem</label>
-        <input type="number" class="form-input" id="rOrigemLat" placeholder="-23.5505" step="0.0001"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Lng. Origem</label>
-        <input type="number" class="form-input" id="rOrigemLng" placeholder="-46.6333" step="0.0001"/>
-      </div>
-    </div>
-    <div>
-      <label class="form-label" style="margin-bottom:8px;display:block">Paradas</label>
-      <div id="stopsList"></div>
-      <button class="btn-add-stop" onclick="addStop()">+ Adicionar Parada</button>
-    </div>
-    <div class="result-box" id="resultBox">
-      <div class="form-label" style="color:var(--green);margin-bottom:10px">✓ Rota Otimizada</div>
-      <div class="result-row"><span>Distância Total</span><span class="result-val" id="resDistancia">—</span></div>
-      <div class="result-row"><span>Tempo Estimado</span><span class="result-val" id="resTempo">—</span></div>
-      <div class="result-row"><span>Paradas</span><span class="result-val" id="resParadas">—</span></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-secondary" onclick="otimizarRota()">⚡ Otimizar</button>
-      <button class="btn btn-primary" onclick="salvarRota()">💾 Salvar Rota</button>
+  <div id="routeDetailsModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal large">
+      <div class="modal-header"><h2>Detalhes da rota</h2><button class="icon-button" type="button" data-close-modal="routeDetailsModal">×</button></div>
+      <div id="routeDetailsContent" class="modal-body"></div>
+      <div class="modal-footer"><button class="btn btn-light" type="button" data-close-modal="routeDetailsModal">Fechar</button></div>
     </div>
   </div>
-</div>
 
-<script>
-TMS.initLayout('routes');
-let allRoutes=[],vehicles=[],map,routeLayer=null,optimizedOrder=null,stopCount=0;
-let selectedDeliveries=[],autoOptimizedOrder=null;
-
-async function load(){
-  [allRoutes,vehicles]=await Promise.all([TMS.fetchRoutes(),TMS.fetchVehicles()]);
-  if (!Array.isArray(allRoutes)) allRoutes = [];
-  if (!Array.isArray(vehicles)) vehicles = [];
-  renderKPIs();filterTable();populateVehicleSelects();renderMapRoutes();
-}
-
-function renderKPIs(){
-  const counts={planejada:0,em_andamento:0,concluida:0,cancelada:0};
-  let totalKm=0;
-  allRoutes.forEach(r=>{counts[r.status]=(counts[r.status]||0)+1;totalKm+=r.distancia_km;});
-  document.getElementById('kpiRow').innerHTML=`
-    <div class="card"><div class="card-title">Total Rotas</div><div class="kpi-value">${allRoutes.length}</div><div class="kpi-sub">cadastradas</div></div>
-    <div class="card"><div class="card-title">Em Andamento</div><div class="kpi-value" style="color:var(--accent)">${counts.em_andamento}</div><div class="kpi-sub">ativas agora</div></div>
-    <div class="card"><div class="card-title">Concluídas</div><div class="kpi-value" style="color:var(--green)">${counts.concluida}</div><div class="kpi-sub">finalizadas</div></div>
-    <div class="card"><div class="card-title">KM Total</div><div class="kpi-value" style="color:var(--yellow)">${totalKm.toFixed(0)}</div><div class="kpi-sub">quilômetros</div></div>`;
-  document.getElementById('routesSub').textContent=`${allRoutes.length} rotas · ${counts.em_andamento} em andamento`;
-}
-
-let sortKey='id',sortAsc=false;
-function filterTable(){
-  const search=document.getElementById('searchInput').value.toLowerCase();
-  const status=document.getElementById('filterStatus').value;
-  let filtered=allRoutes.filter(r=>(!search||r.nome.toLowerCase().includes(search))&&(!status||r.status===status));
-  filtered.sort((a,b)=>{let va=a[sortKey],vb=b[sortKey];if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}return sortAsc?(va>vb?1:-1):(va<vb?1:-1);});
-  renderTable(filtered);
-}
-function sortTable(key){if(sortKey===key)sortAsc=!sortAsc;else{sortKey=key;sortAsc=true;}filterTable();}
-function renderTable(data){
-  const body=document.getElementById('routeTableBody');
-  if(!data.length){body.innerHTML=`<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🗺️</div><div class="empty-text">Nenhuma rota encontrada</div></div></td></tr>`;document.getElementById('tableFooter').textContent='0 resultados';return;}
-  body.innerHTML=data.map(r=>`<tr style="cursor:pointer" onclick="selectRoute(${r.id})">
-    <td style="font-family:var(--mono);color:var(--text3)">#${String(r.id).padStart(3,'0')}</td>
-    <td style="font-weight:600">${r.nome}</td>
-    <td>${TMS.badge(r.status)}</td>
-    <td style="font-family:var(--mono)">${r.distancia_km}km</td>
-    <td style="font-family:var(--mono)">${r.tempo_estimado_min}min</td>
-    <td style="font-family:var(--mono)">${r.carga_total_kg}kg</td>
-    <td style="font-family:var(--mono)">${r.paradas?.length||0}</td>
-    <td style="font-size:11px;color:var(--text3)">${new Date(r.criado_em).toLocaleDateString('pt-BR')}</td>
-    <td><div style="display:flex;gap:4px" onclick="event.stopPropagation()">
-      ${r.status==='planejada'?`<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;color:var(--green)" onclick="mudarStatusRota(${r.id},'em_andamento')">▶ Iniciar</button>`:''}
-      ${r.status==='em_andamento'?`<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;color:var(--accent)" onclick="mudarStatusRota(${r.id},'concluida')">✓ Concluir</button>`:''}
-      ${r.status==='planejada'||r.status==='em_andamento'?`<button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="mudarStatusRota(${r.id},'cancelada')">✕</button>`:''}
-      <button class="btn btn-danger" style="padding:4px 8px;font-size:11px" onclick="deleteRoute(${r.id})">🗑️</button>
-    </div></td>
-  </tr>`).join('');
-  document.getElementById('tableFooter').textContent=`Exibindo ${data.length} de ${allRoutes.length} rotas`;
-}
-async function mudarStatusRota(id, status){
-  const r=allRoutes.find(x=>x.id===id);
-  try{
-    const res=await fetch(`${TMS.API}/routes/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-    if(res.ok){
-      if(r) r.status=status;
-    }
-  }catch{
-    if(r) r.status=status;
-  }
-  // Limpa filtro de status para não sumir a rota
-  document.getElementById('filterStatus').value='';
-  renderKPIs();
-  filterTable();
-}
-function initMap(){
-  map=L.map('map',{zoomControl:false}).setView([-23.5505,-46.6333],11);
-  L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',maxZoom:19}).addTo(map);
-}
-function renderMapRoutes(){
-  allRoutes.forEach(r=>{
-    if(!r.paradas?.length)return;
-    const coords=r.paradas.map(p=>[p.lat,p.lng]);
-    const color=r.status==='em_andamento'?'#3b82f6':r.status==='concluida'?'#22c55e':'#4b5a6e';
-    L.polyline(coords,{color,weight:2,opacity:.7,dashArray:'5,4'}).addTo(map);
-    r.paradas.forEach(p=>L.circleMarker([p.lat,p.lng],{radius:5,color,fillColor:color,fillOpacity:1}).addTo(map).bindPopup(`<b>#${p.ordem} ${p.endereco}</b>`));
-  });
-}
-function selectRoute(id){
-  const r=allRoutes.find(x=>x.id===id);if(!r?.paradas?.length)return;
-  if(routeLayer)map.removeLayer(routeLayer);
-  const coords=r.paradas.map(p=>[p.lat,p.lng]);
-  routeLayer=L.polyline(coords,{color:'#3b82f6',weight:3,opacity:1}).addTo(map);
-  map.fitBounds(routeLayer.getBounds(),{padding:[30,30]});
-}
-function populateVehicleSelects(){
-  const opts='<option value="">Selecione...</option>'+vehicles.map(v=>`<option value="${v.id}">${v.placa} – ${v.modelo}</option>`).join('');
-  document.getElementById('rVehicle').innerHTML=opts;
-  document.getElementById('autoVehicle').innerHTML=opts;
-}
-
-// ── Roteirização Automática ───────────────────────────────
-async function openAutoModal(){
-  document.getElementById('modalAuto').classList.add('show');
-  document.getElementById('stepFiltro').style.display='block';
-  document.getElementById('stepConfig').style.display='none';
-  document.getElementById('btnProximo').style.display='none';
-  document.getElementById('btnVoltar').style.display='none';
-  document.getElementById('btnGeocod').style.display='none';
-  document.getElementById('btnSalvarAuto').style.display='none';
-  document.getElementById('autoDeliveryList').style.display='none';
-  document.getElementById('autoNomeRota').value=`Rota Auto - ${new Date().toLocaleDateString('pt-BR')}`;
-  autoOptimizedOrder=null;selectedDeliveries=[];
-}
-function closeAutoModal(){document.getElementById('modalAuto').classList.remove('show');}
-
-async function buscarEntregasPendentes(){
-  const cidade=document.getElementById('autoCidade').value.toLowerCase().trim();
-  const estado=document.getElementById('autoEstado').value;
-  let entregas=[];
-  try{const data = await TMS.api('/deliveries/?status=pendente'); entregas = Array.isArray(data) ? data : [];}
-  catch{entregas=[
-    {id:1,nf_numero:'000001',nome_fantasia:'Mercado Central',endereco:'Av. Paulista, 1000',cidade:'São Paulo',estado:'SP',peso_kg:250},
-    {id:2,nf_numero:'000002',nome_fantasia:'Padaria do João',endereco:'R. Augusta, 500',cidade:'São Paulo',estado:'SP',peso_kg:80},
-    {id:3,nf_numero:'000003',nome_fantasia:'Farmácia Saúde',endereco:'Al. Santos, 200',cidade:'São Paulo',estado:'SP',peso_kg:15},
-  ];}
-  const filtradas=entregas.filter(e=>(!cidade||(e.cidade||'').toLowerCase().includes(cidade))&&(!estado||e.estado===estado));
-  if(!filtradas.length){alert('Nenhuma entrega pendente encontrada.');return;}
-  document.getElementById('autoCount').textContent=`${filtradas.length} entregas encontradas`;
-  document.getElementById('deliveryCheckList').innerHTML=filtradas.map(e=>`
-    <div class="delivery-item selected" id="ditem_${e.id}" onclick="toggleDelivery(${e.id})">
-      <input type="checkbox" id="dcheck_${e.id}" checked onclick="event.stopPropagation();toggleDelivery(${e.id})"/>
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="delivery-client">${e.nome_fantasia}</div>
-          <div class="delivery-nf">NF ${e.nf_numero}</div>
-          <span class="geo-status" id="geostatus_${e.id}"></span>
-        </div>
-        <div class="delivery-addr">📍 ${e.endereco}${e.cidade?', '+e.cidade:''}${e.estado?' - '+e.estado:''}</div>
-      </div>
-      <div class="delivery-kg">⚖️ ${e.peso_kg||0}kg</div>
-    </div>`).join('');
-  selectedDeliveries=filtradas.map(e=>({...e,_selected:true}));
-  document.getElementById('autoDeliveryList').style.display='block';
-  document.getElementById('btnProximo').style.display='inline-flex';
-}
-
-function toggleDelivery(id){
-  const item=document.getElementById(`ditem_${id}`);
-  const check=document.getElementById(`dcheck_${id}`);
-  const d=selectedDeliveries.find(x=>x.id===id);if(!d)return;
-  d._selected=!d._selected;check.checked=d._selected;
-  item.classList.toggle('selected',d._selected);
-}
-function toggleAll(){
-  const allSel=selectedDeliveries.every(d=>d._selected);
-  selectedDeliveries.forEach(d=>{
-    d._selected=!allSel;
-    const c=document.getElementById(`dcheck_${d.id}`);
-    const i=document.getElementById(`ditem_${d.id}`);
-    if(c)c.checked=d._selected;
-    if(i)i.classList.toggle('selected',d._selected);
-  });
-}
-function irParaConfig(){
-  if(!selectedDeliveries.filter(d=>d._selected).length){alert('Selecione ao menos uma entrega.');return;}
-  document.getElementById('stepFiltro').style.display='none';
-  document.getElementById('stepConfig').style.display='block';
-  document.getElementById('btnProximo').style.display='none';
-  document.getElementById('btnVoltar').style.display='inline-flex';
-  document.getElementById('btnGeocod').style.display='inline-flex';
-  document.getElementById('btnSalvarAuto').style.display='none';
-  document.getElementById('autoResultBox').classList.remove('show');
-}
-function voltarFiltro(){
-  document.getElementById('stepFiltro').style.display='block';
-  document.getElementById('stepConfig').style.display='none';
-  document.getElementById('btnProximo').style.display='inline-flex';
-  document.getElementById('btnVoltar').style.display='none';
-  document.getElementById('btnGeocod').style.display='none';
-  document.getElementById('btnSalvarAuto').style.display='none';
-}
-
-async function geocodificar(endereco,cidade,estado){
-  const q=encodeURIComponent(`${endereco}, ${cidade||''}, ${estado||''}, Brasil`);
-  try{
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,{headers:{'Accept-Language':'pt-BR'}});
-    const d=await r.json();
-    if(d.length>0)return{lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
-  }catch{}
-  return null;
-}
-
-async function geocodificarEOtimizar(){
-  const selecionadas=selectedDeliveries.filter(d=>d._selected);
-  if(!selecionadas.length){alert('Selecione ao menos uma entrega.');return;}
-  document.getElementById('btnGeocod').disabled=true;
-  document.getElementById('btnGeocod').textContent='⏳ Processando...';
-  document.getElementById('geoProgress').style.display='block';
-  let ok=0;
-  for(let i=0;i<selecionadas.length;i++){
-    const d=selecionadas[i];
-    document.getElementById('geoFill').style.width=Math.round((i/selecionadas.length)*100)+'%';
-    document.getElementById('geoLabel').textContent=`Geocodificando ${i+1}/${selecionadas.length}: ${d.nome_fantasia}`;
-    document.getElementById(`geostatus_${d.id}`).className='geo-status geo-loading';
-    document.getElementById(`geostatus_${d.id}`).textContent='⏳';
-    if(d.lat&&d.lng){
-      d._lat=d.lat;d._lng=d.lng;
-      document.getElementById(`geostatus_${d.id}`).className='geo-status geo-ok';
-      document.getElementById(`geostatus_${d.id}`).textContent='✓';
-      ok++;
-    } else {
-      const coords=await geocodificar(d.endereco,d.cidade,d.estado);
-      await new Promise(r=>setTimeout(r,1100));
-      if(coords){
-        d._lat=coords.lat;d._lng=coords.lng;
-        document.getElementById(`geostatus_${d.id}`).className='geo-status geo-ok';
-        document.getElementById(`geostatus_${d.id}`).textContent='✓';
-        ok++;
-      } else {
-        d._lat=-23.5505+(Math.random()-.5)*.05;
-        d._lng=-46.6333+(Math.random()-.5)*.05;
-        document.getElementById(`geostatus_${d.id}`).className='geo-status geo-fail';
-        document.getElementById(`geostatus_${d.id}`).textContent='⚠ estimado';
-      }
-    }
-  }
-  document.getElementById('geoFill').style.width='100%';
-  document.getElementById('geoLabel').textContent=`✓ ${ok}/${selecionadas.length} coordenadas encontradas`;
-  const origemLat=parseFloat(document.getElementById('autoOrigemLat').value)||-23.5505;
-  const origemLng=parseFloat(document.getElementById('autoOrigemLng').value)||-46.6333;
-  const paradas=selecionadas.map((d,i)=>({ordem:i+1,endereco:`${d.endereco}${d.cidade?', '+d.cidade:''}`,lat:d._lat,lng:d._lng,carga_kg:d.peso_kg||0,destinatario:d.nome_fantasia}));
-  try{
-    const body={vehicle_id:parseInt(document.getElementById('autoVehicle').value)||1,origem_lat:origemLat,origem_lng:origemLng,origem_endereco:document.getElementById('autoOrigem').value||'Origem',paradas,nome_rota:document.getElementById('autoNomeRota').value};
-    const res=await fetch(`${TMS.API}/routes/otimizar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data=await res.json();autoOptimizedOrder=data.ordem_otimizada;
-    showAutoResult(data,selecionadas,origemLat,origemLng);
-  }catch{
-    autoOptimizedOrder=paradas;
-    showAutoResult({distancia_total_km:(paradas.length*8.5).toFixed(1),tempo_estimado_min:paradas.length*12,economia_km:2.1,ordem_otimizada:paradas},selecionadas,origemLat,origemLng);
-  }
-  document.getElementById('btnGeocod').disabled=false;
-  document.getElementById('btnGeocod').textContent='⚡ Geocodificar e Otimizar';
-  document.getElementById('btnSalvarAuto').style.display='inline-flex';
-}
-
-function showAutoResult(data,selecionadas,origemLat,origemLng){
-  const carga=selecionadas.reduce((s,d)=>s+(d.peso_kg||0),0);
-  document.getElementById('autoResDistancia').textContent=`${data.distancia_total_km}km`;
-  document.getElementById('autoResTempo').textContent=`${data.tempo_estimado_min}min`;
-  document.getElementById('autoResParadas').textContent=data.ordem_otimizada?.length||0;
-  document.getElementById('autoResCarga').textContent=`${carga}kg`;
-  document.getElementById('autoResEconomia').textContent=data.economia_km>0?`↓ ${data.economia_km}km economizados`:'';
-  document.getElementById('autoResultBox').classList.add('show');
-  if(routeLayer)map.removeLayer(routeLayer);
-  const coords=[[origemLat,origemLng],...(autoOptimizedOrder||[]).map(p=>[p.lat,p.lng])];
-  routeLayer=L.polyline(coords,{color:'#22c55e',weight:3,opacity:.9,dashArray:'8,4'}).addTo(map);
-  L.circleMarker([origemLat,origemLng],{radius:10,color:'#f97316',fillColor:'#f97316',fillOpacity:1}).addTo(map).bindPopup('📦 Origem');
-  (autoOptimizedOrder||[]).forEach((p,i)=>L.circleMarker([p.lat,p.lng],{radius:7,color:'#22c55e',fillColor:'#22c55e',fillOpacity:1}).addTo(map).bindPopup(`#${i+1} ${p.endereco}`));
-  map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
-}
-
-async function salvarRotaAuto(){
-  const selecionadas=selectedDeliveries.filter(d=>d._selected);
-
-  // Valida capacidade do veículo
-  const vehicleId = parseInt(document.getElementById('autoVehicle').value);
-  const veiculo = vehicles.find(v => v.id === vehicleId);
-  if (veiculo) {
-    const cargaTotal = selecionadas.reduce((s,d) => s + (d.peso_kg||0), 0);
-    if (cargaTotal > veiculo.capacidade_kg) {
-      alert(`⚠️ Carga total (${cargaTotal}kg) excede a capacidade do veículo (${veiculo.capacidade_kg}kg)!\n\nRemova algumas entregas ou escolha outro veículo.`);
-      return;
-    }
-  }
-
-  const paradas=autoOptimizedOrder||selecionadas.map((d,i)=>({ordem:i+1,endereco:d.endereco,lat:d._lat||-23.55,lng:d._lng||-46.63,carga_kg:d.peso_kg||0,destinatario:d.nome_fantasia}));
-  const body={nome:document.getElementById('autoNomeRota').value||'Rota Automática',vehicle_id:parseInt(document.getElementById('autoVehicle').value)||1,origem_lat:parseFloat(document.getElementById('autoOrigemLat').value)||-23.5505,origem_lng:parseFloat(document.getElementById('autoOrigemLng').value)||-46.6333,origem_endereco:document.getElementById('autoOrigem').value||'Origem',paradas};
-  try{
-    const res=await fetch(`${TMS.API}/routes/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!res.ok){const e=await res.json();alert(e.detail||'Erro');return;}
-    const rota=await res.json();
-    for(const d of selecionadas)await fetch(`${TMS.API}/deliveries/${d.id}/atribuir-rota/${rota.id}`,{method:'PATCH'}).catch(()=>{});
-    await load();
-  }catch{
-    alert('Não foi possível salvar a rota.');
-    renderKPIs();filterTable();
-  }
-  closeAutoModal();
-  alert('Rota criada e entregas vinculadas com sucesso!');
-}
-
-// ── Rota Manual ───────────────────────────────────────────
-function addStop(){
-  const idx=stopCount++;const div=document.createElement('div');
-  div.className='stop-row';div.id=`stop_${idx}`;
-  div.innerHTML=`<span style="font-family:var(--mono);font-size:10px;color:var(--text3);min-width:16px">${idx+1}</span><input type="text" placeholder="Endereço" style="flex:3"/><input type="number" class="stop-lat small" data-idx="${idx}" placeholder="Lat" step="0.0001"/><input type="number" class="stop-lng small" data-idx="${idx}" placeholder="Lng" step="0.0001"/><input type="number" placeholder="kg" style="flex:0.7"/><button class="btn-rm" onclick="document.getElementById('stop_${idx}').remove()">✕</button>`;
-  document.getElementById('stopsList').appendChild(div);
-}
-function getStops(){
-  return Array.from(document.querySelectorAll('#stopsList .stop-row')).map((row,i)=>{
-    const inputs=row.querySelectorAll('input');
-    return{ordem:i+1,endereco:inputs[0].value||`Parada ${i+1}`,lat:parseFloat(inputs[1].value)||(-23.55+Math.random()*.1),lng:parseFloat(inputs[2].value)||(-46.65+Math.random()*.1),carga_kg:parseFloat(inputs[3].value)||0};
-  });
-}
-async function otimizarRota(){
-  const paradas=getStops();if(!paradas.length){alert('Adicione ao menos uma parada.');return;}
-  const body={vehicle_id:parseInt(document.getElementById('rVehicle').value)||1,origem_lat:parseFloat(document.getElementById('rOrigemLat').value)||-23.5505,origem_lng:parseFloat(document.getElementById('rOrigemLng').value)||-46.6333,origem_endereco:document.getElementById('rOrigem').value||'Origem',paradas,nome_rota:document.getElementById('rNome').value||'Rota'};
-  try{const res=await fetch(`${TMS.API}/routes/otimizar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await res.json();optimizedOrder=data.ordem_otimizada;showResult(data);}
-  catch{optimizedOrder=paradas;showResult({distancia_total_km:(paradas.length*8.5).toFixed(1),tempo_estimado_min:paradas.length*12,ordem_otimizada:paradas});}
-}
-function showResult(data){
-  document.getElementById('resDistancia').textContent=`${data.distancia_total_km}km`;
-  document.getElementById('resTempo').textContent=`${data.tempo_estimado_min}min`;
-  document.getElementById('resParadas').textContent=data.ordem_otimizada?.length||0;
-  document.getElementById('resultBox').classList.add('show');
-}
-async function salvarRota(){
-  const paradas=optimizedOrder||getStops();
-  const body={nome:document.getElementById('rNome').value||'Nova Rota',vehicle_id:parseInt(document.getElementById('rVehicle').value)||1,origem_lat:parseFloat(document.getElementById('rOrigemLat').value)||-23.5505,origem_lng:parseFloat(document.getElementById('rOrigemLng').value)||-46.6333,origem_endereco:document.getElementById('rOrigem').value||'Origem',paradas};
-  try{const res=await fetch(`${TMS.API}/routes/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){const e=await res.json();alert(e.detail||'Erro');return;}await load();}
-  catch{alert('Não foi possível salvar a rota.');}
-  closeModal();
-}
-async function deleteRoute(id){
-  if(!confirm('Excluir esta rota?'))return;
-  try{const res = await fetch(`${TMS.API}/routes/${id}`,{method:'DELETE'}); if(!res.ok) throw new Error(); await load();}
-  catch{alert('Não foi possível excluir a rota.');}
-}
-function openModal(){document.getElementById('modal').classList.add('show');}
-function closeModal(){document.getElementById('modal').classList.remove('show');optimizedOrder=null;document.getElementById('resultBox').classList.remove('show');}
-
-initMap();
-load();
-</script>
+  <div id="toastContainer" class="toast-container"></div>
+  <script type="module" src="/assets/js/routes.js?v=1.0.0-rc1"></script>
 </body>
 </html>

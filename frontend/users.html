@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usuarios | TMS</title>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=1.0.0-rc1" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <section class="app-main">
+      <header id="topbar"></header>
+      <main class="page">
+        <div class="page-header">
+          <div><h1>Usuarios</h1><p>Gerencie administradores, operadores e motoristas.</p></div>
+          <div class="actions"><button id="refreshUsers" class="btn btn-light" type="button">↻ Atualizar</button><button id="newUserButton" class="btn btn-primary" type="button">＋ Novo usuario</button></div>
+        </div>
+        <section class="stats-grid">
+          <article class="stat-card"><div class="stat-label">Total</div><div id="userTotal" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Administradores</div><div id="userAdmins" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Operadores</div><div id="userOperators" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Motoristas</div><div id="userDrivers" class="stat-value">0</div></article>
+        </section>
+        <section class="card">
+          <div class="card-header"><h2>Usuarios cadastrados</h2><div class="filters"><input id="userSearch" class="control search-control" type="search" placeholder="Buscar nome ou e-mail" /><select id="userRoleFilter" class="control"><option value="">Todos os perfis</option><option value="administrador">Administrador</option><option value="operador">Operador</option><option value="motorista">Motorista</option></select></div></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Situacao</th><th>Cadastro</th><th>Acoes</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <div id="userModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal small">
+      <div class="modal-header"><h2 id="userModalTitle">Novo usuario</h2><button class="icon-button" type="button" data-close-modal="userModal">×</button></div>
+      <form id="userForm">
+        <div class="modal-body"><div class="form-grid">
+          <div class="field full"><label for="userName">Nome *</label><input id="userName" maxlength="120" required /></div>
+          <div class="field full"><label for="userEmail">E-mail *</label><input id="userEmail" type="email" maxlength="254" autocomplete="off" required /></div>
+          <div class="field"><label for="userRole">Perfil *</label><select id="userRole"><option value="administrador">Administrador</option><option value="operador">Operador</option><option value="motorista">Motorista</option></select></div>
+          <div class="field"><label for="userPassword">Senha</label><input id="userPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" /><span id="passwordHint" class="form-hint"></span></div>
+          <div class="field full"><label><input id="userActive" type="checkbox" checked /> Usuario ativo</label></div>
+        </div></div>
+        <div class="modal-footer"><button class="btn btn-light" type="button" data-close-modal="userModal">Cancelar</button><button id="saveUserButton" class="btn btn-primary" type="submit">Salvar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script type="module" src="/assets/js/users.js?v=1.0.0-rc1"></script>
+</body>
+</html>

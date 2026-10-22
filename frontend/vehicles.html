@@ -1,284 +1,79 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TMS · Veículos</title>
-  <script src="tms.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Veiculos | TMS</title>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=1.0.0-rc1" />
 </head>
 <body>
-
-<div class="topbar">
-  <div>
-    <span class="topbar-title">Veículos</span>
-    <span class="topbar-breadcrumb">/ gestão da frota</span>
-  </div>
-  <div class="topbar-right">
-    <span class="topbar-time" id="clock"></span>
-    <button class="btn btn-primary" onclick="openModal()">+ Novo Veículo</button>
-  </div>
-</div>
-
-<div class="page">
-  <div class="page-header">
-    <div>
-      <div class="page-title">Gestão da Frota</div>
-      <div class="page-sub" id="fleetSub">Carregando...</div>
-    </div>
-  </div>
-
-  <div class="grid-4" style="margin-bottom:20px" id="kpiRow"></div>
-
-  <div class="card">
-    <div class="toolbar">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="search-input" type="text" id="searchInput" placeholder="Buscar por placa, modelo ou motorista..." oninput="filterTable()"/>
-      </div>
-      <select class="filter-select" id="filterStatus" onchange="filterTable()">
-        <option value="">Todos os status</option>
-        <option value="disponivel">Disponível</option>
-        <option value="em_rota">Em Rota</option>
-        <option value="manutencao">Manutenção</option>
-        <option value="inativo">Inativo</option>
-      </select>
-      <select class="filter-select" id="filterTipo" onchange="filterTable()">
-        <option value="">Todos os tipos</option>
-        <option value="caminhao">Caminhão</option>
-        <option value="van">Van</option>
-        <option value="moto">Moto</option>
-        <option value="carro">Carro</option>
-      </select>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th onclick="sortTable('id')" style="cursor:pointer">ID ↕</th>
-            <th onclick="sortTable('placa')" style="cursor:pointer">Placa ↕</th>
-            <th onclick="sortTable('modelo')" style="cursor:pointer">Modelo ↕</th>
-            <th>Tipo</th>
-            <th onclick="sortTable('capacidade_kg')" style="cursor:pointer">Capacidade ↕</th>
-            <th>Motorista</th>
-            <th>Telefone</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="vehicleTableBody"></tbody>
-      </table>
-    </div>
-    <div id="tableFooter" style="padding:12px 14px;font-size:11px;color:var(--text3);font-family:var(--mono);border-top:1px solid var(--border)"></div>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Cadastrar Veículo</div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <input type="hidden" id="editId"/>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Placa *</label>
-        <input type="text" class="form-input" id="vPlaca" placeholder="ABC-1234"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tipo *</label>
-        <select class="form-select" id="vTipo">
-          <option value="caminhao">Caminhão</option>
-          <option value="van">Van</option>
-          <option value="moto">Moto</option>
-          <option value="carro">Carro</option>
-          <option value="bitruck">Bitruck</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Modelo *</label>
-      <input type="text" class="form-input" id="vModelo" placeholder="Ex: Volkswagen Delivery 9.170"/>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Capacidade (kg) *</label>
-        <input type="number" class="form-input" id="vCapacidade" placeholder="9000"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Status</label>
-        <select class="form-select" id="vStatus">
-          <option value="disponivel">Disponível</option>
-          <option value="em_rota">Em Rota</option>
-          <option value="manutencao">Manutenção</option>
-          <option value="inativo">Inativo</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Motorista</label>
-        <input type="text" class="form-input" id="vMotorista" placeholder="Nome completo"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Telefone</label>
-        <input type="text" class="form-input" id="vTelefone" placeholder="(11) 99999-9999"/>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" style="flex:2" onclick="saveVehicle()">Salvar Veículo</button>
-    </div>
-  </div>
-</div>
-
-<script>
-TMS.initLayout('vehicles');
-
-let allVehicles = [];
-let sortKey = 'id', sortAsc = true;
-
-async function load() {
-  allVehicles = await TMS.fetchVehicles();
-  renderKPIs();
-  filterTable();
-}
-
-function renderKPIs() {
-  const counts = {disponivel:0, em_rota:0, manutencao:0, inativo:0};
-  allVehicles.forEach(v => counts[v.status] = (counts[v.status]||0)+1);
-  document.getElementById('kpiRow').innerHTML = `
-    <div class="card"><div class="card-title">Total</div><div class="kpi-value">${allVehicles.length}</div><div class="kpi-sub">veículos cadastrados</div></div>
-    <div class="card"><div class="card-title">Em Rota</div><div class="kpi-value" style="color:var(--accent)">${counts.em_rota}</div><div class="kpi-sub">ativos agora</div></div>
-    <div class="card"><div class="card-title">Disponíveis</div><div class="kpi-value" style="color:var(--green)">${counts.disponivel}</div><div class="kpi-sub">prontos</div></div>
-    <div class="card"><div class="card-title">Manutenção</div><div class="kpi-value" style="color:var(--yellow)">${counts.manutencao}</div><div class="kpi-sub">indisponíveis</div></div>
-  `;
-  document.getElementById('fleetSub').textContent = `${allVehicles.length} veículos · ${counts.em_rota} em rota · ${counts.disponivel} disponíveis`;
-}
-
-function filterTable() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const status = document.getElementById('filterStatus').value;
-  const tipo = document.getElementById('filterTipo').value;
-  let filtered = allVehicles.filter(v => {
-    const matchSearch = !search || v.placa.toLowerCase().includes(search) || v.modelo.toLowerCase().includes(search) || (v.motorista||'').toLowerCase().includes(search);
-    return matchSearch && (!status || v.status===status) && (!tipo || v.tipo===tipo);
-  });
-  filtered.sort((a,b) => {
-    let va=a[sortKey], vb=b[sortKey];
-    if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}
-    return sortAsc?(va>vb?1:-1):(va<vb?1:-1);
-  });
-  renderTable(filtered);
-}
-
-function sortTable(key) {
-  if(sortKey===key) sortAsc=!sortAsc; else{sortKey=key;sortAsc=true;}
-  filterTable();
-}
-
-function renderTable(data) {
-  const body = document.getElementById('vehicleTableBody');
-  if (!data.length) {
-    body.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Nenhum veículo encontrado</div></div></td></tr>`;
-    document.getElementById('tableFooter').textContent = '0 resultados';
-    return;
-  }
-  body.innerHTML = data.map(v=>`
-    <tr>
-      <td style="font-family:var(--mono);color:var(--text3)">#${String(v.id).padStart(4,'0')}</td>
-      <td style="font-family:var(--mono);font-weight:700">${v.placa}</td>
-      <td>${v.modelo}</td>
-      <td style="text-transform:capitalize">${v.tipo}</td>
-      <td style="font-family:var(--mono)">${v.capacidade_kg.toLocaleString()}kg</td>
-      <td>${v.motorista||'<span style="color:var(--text3)">—</span>'}</td>
-      <td style="font-family:var(--mono);font-size:12px">${v.telefone_motorista||'<span style="color:var(--text3)">—</span>'}</td>
-      <td>${TMS.badge(v.status)}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="editVehicle(${v.id})">✏️</button>
-          <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteVehicle(${v.id})">🗑️</button>
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <section class="app-main">
+      <header id="topbar"></header>
+      <main class="page">
+        <div class="page-header">
+          <div><h1>Veiculos</h1><p>Cadastre a frota e acompanhe sua disponibilidade.</p></div>
+          <div class="actions">
+            <button id="refreshVehicles" class="btn btn-light" type="button">↻ Atualizar</button>
+            <button id="newVehicleButton" class="btn btn-primary" type="button">＋ Novo veiculo</button>
+          </div>
         </div>
-      </td>
-    </tr>`).join('');
-  document.getElementById('tableFooter').textContent = `Exibindo ${data.length} de ${allVehicles.length} veículos`;
-}
 
-function openModal() {
-  document.getElementById('editId').value='';
-  document.getElementById('modalTitle').textContent='Cadastrar Veículo';
-  ['vPlaca','vModelo','vMotorista','vTelefone'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('vCapacidade').value='';
-  document.getElementById('vStatus').value='disponivel';
-  document.getElementById('modal').classList.add('show');
-}
+        <section class="stats-grid">
+          <article class="stat-card"><div class="stat-label">Total</div><div id="vehicleTotal" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Disponiveis</div><div id="vehicleAvailable" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Em rota</div><div id="vehicleInRoute" class="stat-value">0</div></article>
+          <article class="stat-card"><div class="stat-label">Manutencao</div><div id="vehicleMaintenance" class="stat-value">0</div></article>
+        </section>
 
-function closeModal() { document.getElementById('modal').classList.remove('show'); }
+        <section class="card">
+          <div class="card-header">
+            <h2>Frota cadastrada</h2>
+            <div class="filters">
+              <input id="vehicleSearch" class="control search-control" type="search" placeholder="Buscar placa, marca ou modelo" />
+              <select id="vehicleStatusFilter" class="control">
+                <option value="">Todos os status</option>
+                <option value="disponivel">Disponivel</option>
+                <option value="em_rota">Em rota</option>
+                <option value="manutencao">Manutencao</option>
+                <option value="inativo">Inativo</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Placa</th><th>Marca</th><th>Modelo</th><th>Ano</th><th>Capacidade</th><th>Cubagem</th><th>KM</th><th>Status</th><th>Acoes</th></tr></thead>
+              <tbody id="vehiclesBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
 
-function editVehicle(id) {
-  const v=allVehicles.find(x=>x.id===id); if(!v) return;
-  document.getElementById('editId').value=v.id;
-  document.getElementById('modalTitle').textContent='Editar Veículo';
-  document.getElementById('vPlaca').value=v.placa;
-  document.getElementById('vModelo').value=v.modelo;
-  document.getElementById('vTipo').value=v.tipo;
-  document.getElementById('vCapacidade').value=v.capacidade_kg;
-  document.getElementById('vStatus').value=v.status;
-  document.getElementById('vMotorista').value=v.motorista||'';
-  document.getElementById('vTelefone').value=v.telefone_motorista||'';
-  document.getElementById('modal').classList.add('show');
-}
+  <div id="vehicleModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header"><h2 id="vehicleModalTitle">Novo veiculo</h2><button class="icon-button" type="button" data-close-modal="vehicleModal">×</button></div>
+      <form id="vehicleForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="field"><label for="vehiclePlate">Placa *</label><input id="vehiclePlate" maxlength="10" required /></div>
+            <div class="field"><label for="vehicleBrand">Marca</label><input id="vehicleBrand" maxlength="80" /></div>
+            <div class="field"><label for="vehicleModel">Modelo *</label><input id="vehicleModel" maxlength="120" required /></div>
+            <div class="field"><label for="vehicleYear">Ano</label><input id="vehicleYear" type="number" min="1950" max="2100" /></div>
+            <div class="field"><label for="vehicleCapacityKg">Capacidade (kg)</label><input id="vehicleCapacityKg" type="number" min="0" step="0.01" /></div>
+            <div class="field"><label for="vehicleCapacityM3">Cubagem (m³)</label><input id="vehicleCapacityM3" type="number" min="0" step="0.001" /></div>
+            <div class="field"><label for="vehicleCurrentKm">Quilometragem</label><input id="vehicleCurrentKm" type="number" min="0" value="0" /></div>
+            <div class="field"><label for="vehicleStatus">Status</label><select id="vehicleStatus"><option value="disponivel">Disponivel</option><option value="em_rota">Em rota</option><option value="manutencao">Manutencao</option><option value="inativo">Inativo</option></select></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-light" type="button" data-close-modal="vehicleModal">Cancelar</button><button id="saveVehicleButton" class="btn btn-primary" type="submit">Salvar</button></div>
+      </form>
+    </div>
+  </div>
 
-async function saveVehicle() {
-  const id = document.getElementById('editId').value;
-  const body = {
-    placa: document.getElementById('vPlaca').value.trim().toUpperCase(),
-    modelo: document.getElementById('vModelo').value.trim(),
-    tipo: document.getElementById('vTipo').value,
-    capacidade_kg: parseFloat(document.getElementById('vCapacidade').value) || 0,
-    status: document.getElementById('vStatus').value,
-    motorista: document.getElementById('vMotorista').value.trim() || null,
-    telefone_motorista: document.getElementById('vTelefone').value.trim() || null
-  };
-  if (!body.placa || !body.modelo || !body.capacidade_kg) {
-    alert('Preencha os campos obrigatórios.');
-    return;
-  }
-  try {
-    if (id) {
-      await TMS.api(`/vehicles/${id}`, {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-      });
-    } else {
-      await TMS.api('/vehicles/', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-      });
-    }
-    await load();
-    closeModal();
-    alert(id ? 'Veículo atualizado com sucesso.' : 'Veículo cadastrado com sucesso.');
-  } catch (err) {
-    console.error('Erro ao salvar veículo:', err);
-    alert(TMS.getErrorMessage(err, 'Não foi possível salvar o veículo.'));
-  }
-}
-
-async function deleteVehicle(id) {
-  if (!confirm('Excluir este veículo?')) return;
-  try {
-    await TMS.api(`/vehicles/${id}`, { method: 'DELETE' });
-    await load();
-    alert('Veículo excluído com sucesso.');
-  } catch (err) {
-    console.error('Erro ao excluir veículo:', err);
-    alert(TMS.getErrorMessage(err, 'Não foi possível excluir o veículo.'));
-  }
-}
-
-load();
-</script>
+  <div id="toastContainer" class="toast-container"></div>
+  <script type="module" src="/assets/js/vehicles.js?v=1.0.0-rc1"></script>
 </body>
 </html>

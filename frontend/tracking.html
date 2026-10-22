@@ -1,215 +1,119 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TMS · Rastreamento</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="tms.js"></script>
-  <style>
-    .track-layout{display:grid;grid-template-columns:280px 1fr;flex:1;min-height:0;overflow:hidden;}
-    .track-sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-    .track-sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);}
-    .track-sidebar-title{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;}
-    .v-list{overflow-y:auto;flex:1;padding:8px;}
-    .v-item{padding:12px;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:4px;border:1px solid transparent;}
-    .v-item:hover{background:var(--surface2);border-color:var(--border);}
-    .v-item.active{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);}
-    .v-placa{font-family:var(--mono);font-size:13px;font-weight:700;margin-bottom:3px;}
-    .v-info{font-size:11px;color:var(--text3);margin-bottom:6px;}
-    .map-area{position:relative;}
-    #map{width:100%;height:100%;}
-    .leaflet-container{background:#0d1117 !important;}
-    .leaflet-tile{filter:none !important;}
-    .map-card{position:absolute;z-index:500;background:rgba(17,19,24,.95);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:16px;}
-    .info-card{top:16px;left:16px;width:240px;display:none;}
-    .info-card.show{display:block;}
-    .log-card{bottom:16px;right:16px;width:280px;max-height:180px;display:flex;flex-direction:column;}
-    .log-title{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;flex-shrink:0;}
-    .log-list{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:3px;}
-    .log-entry{font-size:10px;font-family:var(--mono);color:var(--text3);padding-bottom:3px;border-bottom:1px solid var(--border);}
-    .log-entry .t{color:var(--accent);margin-right:6px;}
-    .metric-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
-    .metric{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;}
-    .metric .lbl{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;}
-    .metric .val{font-size:16px;font-family:var(--mono);font-weight:700;color:var(--accent);}
-    .sim-btn{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(59,130,246,.9);color:#fff;border:none;border-radius:20px;padding:8px 20px;font-family:var(--mono);font-size:11px;cursor:pointer;}
-    .sim-btn:hover{background:var(--accent);}
-    .live-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:20px;padding:3px 10px;font-size:10px;font-family:var(--mono);color:var(--green);}
-    .live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rastreamento | TMS</title>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=1.0.0-rc1" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="/assets/css/tracking.css?v=1.0.0-rc1" />
 </head>
-<body style="flex-direction:column">
-
-<div class="topbar">
-  <div>
-    <span class="topbar-title">Rastreamento</span>
-    <span class="topbar-breadcrumb">/ ao vivo</span>
-  </div>
-  <div class="topbar-right">
-    <div class="live-pill"><div class="live-dot"></div><span id="wsLabel">CONECTANDO</span></div>
-    <span class="topbar-time" id="clock"></span>
-  </div>
-</div>
-
-<div class="track-layout" style="flex:1;height:calc(100vh - 54px)">
-  <div class="track-sidebar">
-    <div class="track-sidebar-header">
-      <div class="track-sidebar-title">Frota ao Vivo</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:3px" id="fleetCount">—</div>
-    </div>
-    <div class="v-list" id="vehicleList"></div>
-  </div>
-
-  <div class="map-area">
-    <div id="map"></div>
-
-    <div class="map-card info-card" id="infoCard">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div>
-          <div style="font-family:var(--mono);font-size:14px;font-weight:700" id="infPlaca">—</div>
-          <div style="font-size:11px;color:var(--text3)" id="infModelo">—</div>
+<body>
+  <div class="app-shell">
+    <aside id="sidebar"></aside>
+    <section class="app-main">
+      <header id="topbar"></header>
+      <main class="page">
+        <div class="page-header">
+          <div>
+            <h1>Rastreamento</h1>
+            <p>Acompanhe os motoristas com rota em andamento e consulte o trajeto registrado.</p>
+          </div>
+          <div class="actions">
+            <span id="trackingConnection" class="tracking-connection">
+              <span class="tracking-connection-dot"></span>
+              Conectando
+            </span>
+            <button id="refreshTracking" class="btn btn-light" type="button">↻ Atualizar</button>
+          </div>
         </div>
-        <button onclick="closeInfo()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:3px 8px;font-size:11px">✕</button>
-      </div>
-      <div id="infBadge"></div>
-      <div class="metric-row">
-        <div class="metric"><div class="lbl">Velocidade</div><div class="val" id="infSpeed">0<span style="font-size:10px">km/h</span></div></div>
-        <div class="metric"><div class="lbl">Motorista</div><div class="val" style="font-size:12px" id="infDriver">—</div></div>
-        <div class="metric"><div class="lbl">Lat</div><div class="val" style="font-size:11px" id="infLat">—</div></div>
-        <div class="metric"><div class="lbl">Lng</div><div class="val" style="font-size:11px" id="infLng">—</div></div>
-      </div>
-    </div>
 
-    <div class="map-card log-card">
-      <div class="log-title">📡 Telemetria</div>
-      <div class="log-list" id="logList"><div style="color:var(--text3);font-size:10px">Aguardando eventos...</div></div>
-    </div>
+        <section class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-label">Rotas em andamento</div>
+            <div id="trackingActiveRoutes" class="stat-value">0</div>
+            <div class="stat-foot">Viagens visíveis no monitor</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">GPS online</div>
+            <div id="trackingOnlineDrivers" class="stat-value">0</div>
+            <div class="stat-foot">Atualização recebida nos últimos 2 minutos</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Sem sinal recente</div>
+            <div id="trackingOfflineDrivers" class="stat-value">0</div>
+            <div class="stat-foot">GPS desativado, sem permissão ou sem internet</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Última atualização</div>
+            <div id="trackingLastRefresh" class="stat-value tracking-time-value">—</div>
+            <div class="stat-foot">Atualização automática a cada 15 segundos</div>
+          </article>
+        </section>
 
-    <button class="sim-btn" onclick="simulate()">🎲 Simular Movimento</button>
+        <section class="tracking-toolbar card">
+          <div class="tracking-toolbar-fields">
+            <input
+              id="trackingSearch"
+              class="control search-control"
+              type="search"
+              placeholder="Buscar motorista, rota ou placa"
+            />
+            <select id="trackingSignalFilter" class="control">
+              <option value="">Todos os sinais</option>
+              <option value="online">GPS online</option>
+              <option value="offline">Sem sinal recente</option>
+            </select>
+          </div>
+          <div class="tracking-toolbar-note">
+            O GPS é compartilhado somente durante uma rota em andamento.
+          </div>
+        </section>
+
+        <section class="tracking-layout">
+          <article class="card tracking-map-card">
+            <div class="card-header">
+              <div>
+                <h2>Mapa operacional</h2>
+                <p id="trackingMapSubtitle" class="muted small">Selecione um motorista para ver o trajeto.</p>
+              </div>
+              <button id="fitTrackingMap" class="btn btn-light btn-sm" type="button">Enquadrar todos</button>
+            </div>
+            <div class="tracking-map-wrap">
+              <div id="trackingMap" class="tracking-map" aria-label="Mapa de rastreamento"></div>
+              <div id="trackingMapFallback" class="tracking-map-fallback" hidden>
+                <strong>Mapa indisponível</strong>
+                <span>A lista de motoristas continua funcionando. Verifique a conexão com a internet para carregar o mapa.</span>
+              </div>
+            </div>
+            <div id="trackingSelectedSummary" class="tracking-selected-summary" hidden></div>
+          </article>
+
+          <aside class="card tracking-drivers-card">
+            <div class="card-header">
+              <div>
+                <h2>Motoristas em rota</h2>
+                <p id="trackingDriverCount" class="muted small">0 motoristas</p>
+              </div>
+            </div>
+            <div id="trackingDriversList" class="tracking-drivers-list"></div>
+          </aside>
+        </section>
+      </main>
+    </section>
   </div>
-</div>
 
-<script>
-TMS.initLayout('tracking');
-
-let map, markers={}, vehicles=[], ws=null, selectedId=null;
-
-function initMap(){
-  map=L.map('map',{zoomControl:false}).setView([-23.5505,-46.6333],12);
-  L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',maxZoom:19}).addTo(map);
-}
-
-function connectWS(){
-  try{
-    ws=new WebSocket(TMS.toWsURL('/tracking/ws/all/live'));
-    ws.onopen=()=>{document.getElementById('wsLabel').textContent='AO VIVO';};
-    ws.onmessage=e=>{const d=JSON.parse(e.data);onUpdate(d);};
-    ws.onclose=()=>{document.getElementById('wsLabel').textContent='OFFLINE';setTimeout(connectWS,3000);};
-  }catch{document.getElementById('wsLabel').textContent='DEMO';}
-}
-
-function onUpdate(data){
-  const v=vehicles.find(x=>x.id===data.vehicle_id);
-  if(!v)return;
-  v.lat_atual=data.lat;v.lng_atual=data.lng;v.velocidade=data.velocidade_kmh;
-  if(markers[v.id])markers[v.id].setLatLng([data.lat,data.lng]);
-  refreshCard(v);
-  if(selectedId===v.id)showInfo(v);
-  addLog(v.placa,data);
-}
-
-async function load(){
-  vehicles=await TMS.fetchVehicles();
-  if (!Array.isArray(vehicles)) vehicles = [];
-  vehicles.forEach(v=>v.velocidade=0);
-  renderList();renderMarkers();
-  document.getElementById('fleetCount').textContent=`${vehicles.filter(v=>v.status==='em_rota').length} em rota · ${vehicles.length} total`;
-}
-
-function renderList(){
-  document.getElementById('vehicleList').innerHTML=vehicles.map(v=>{
-    const[cls,label]=TMS.statusMap[v.status]||['badge-gray',v.status];
-    return`<div class="v-item ${selectedId===v.id?'active':''}" id="vcard_${v.id}" onclick="selectVehicle(${v.id})">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="v-placa">${v.placa}</div>
-        <span class="badge ${cls}" style="font-size:9px">${label}</span>
-      </div>
-      <div class="v-info">${v.modelo}</div>
-      <div style="display:flex;justify-content:space-between">
-        <span style="font-size:11px;color:var(--text3)">👤 ${v.motorista||'—'}</span>
-        <span style="font-family:var(--mono);font-size:12px;color:var(--accent)" id="vspeed_${v.id}">⚡ 0km/h</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function refreshCard(v){
-  const el=document.getElementById(`vspeed_${v.id}`);
-  if(el)el.textContent=`⚡ ${Math.round(v.velocidade||0)}km/h`;
-}
-
-function createMarker(v){
-  const moving=v.status==='em_rota';
-  const icon=L.divIcon({className:'',html:`<div style="width:${moving?14:10}px;height:${moving?14:10}px;border-radius:50%;background:${moving?'#3b82f6':'#4b5a6e'};border:2px solid rgba(0,0,0,.5);box-shadow:0 0 ${moving?10:4}px ${moving?'#3b82f6':'#4b5a6e'}"></div>`,iconSize:[14,14],iconAnchor:[7,7]});
-  markers[v.id]=L.marker([v.lat_atual,v.lng_atual],{icon}).addTo(map).on('click',()=>selectVehicle(v.id));
-}
-
-function renderMarkers(){
-  Object.values(markers).forEach(m=>map.removeLayer(m));
-  markers={};
-  vehicles.forEach(v=>createMarker(v));
-}
-
-function selectVehicle(id){
-  selectedId=id;
-  const v=vehicles.find(x=>x.id===id);if(!v)return;
-  document.querySelectorAll('.v-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById(`vcard_${id}`)?.classList.add('active');
-  map.setView([v.lat_atual,v.lng_atual],15);
-  showInfo(v);
-}
-
-function showInfo(v){
-  document.getElementById('infPlaca').textContent=v.placa;
-  document.getElementById('infModelo').textContent=v.modelo;
-  document.getElementById('infBadge').innerHTML=TMS.badge(v.status);
-  document.getElementById('infSpeed').innerHTML=`${Math.round(v.velocidade||0)}<span style="font-size:10px">km/h</span>`;
-  document.getElementById('infDriver').textContent=v.motorista?.split(' ')[0]||'—';
-  document.getElementById('infLat').textContent=v.lat_atual?.toFixed(4)||'—';
-  document.getElementById('infLng').textContent=v.lng_atual?.toFixed(4)||'—';
-  document.getElementById('infoCard').classList.add('show');
-}
-
-function closeInfo(){document.getElementById('infoCard').classList.remove('show');selectedId=null;}
-
-function addLog(placa,data){
-  const time=new Date().toTimeString().slice(0,8);
-  const entry=document.createElement('div');
-  entry.className='log-entry';
-  entry.innerHTML=`<span class="t">${time}</span>${placa} → ${data.lat.toFixed(4)},${data.lng.toFixed(4)} ${data.velocidade_kmh?`| ${Math.round(data.velocidade_kmh)}km/h`:''}`;
-  const log=document.getElementById('logList');
-  if(log.children[0]?.textContent?.includes('Aguardando'))log.innerHTML='';
-  log.insertBefore(entry,log.firstChild);
-  if(log.children.length>25)log.removeChild(log.lastChild);
-}
-
-function simulate(){
-  const moving=vehicles.filter(v=>v.status==='em_rota');
-  if(!moving.length){alert('Nenhum veículo em rota para simular.');return;}
-  moving.forEach(v=>{
-    const lat=v.lat_atual+(Math.random()-.5)*.003;
-    const lng=v.lng_atual+(Math.random()-.5)*.003;
-    const speed=20+Math.random()*60;
-    onUpdate({vehicle_id:v.id,lat,lng,velocidade_kmh:Math.round(speed)});
-    fetch(`${TMS.API}/tracking/`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vehicle_id:v.id,lat,lng,velocidade_kmh:speed})}).catch(()=>{});
-  });
-}
-
-initMap();load();connectWS();
-</script>
+  <div id="toastContainer" class="toast-container"></div>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin="anonymous"
+  ></script>
+  <script type="module" src="/assets/js/tracking.js?v=1.0.0-rc1"></script>
 </body>
 </html>

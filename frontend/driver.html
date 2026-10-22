@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101828" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Minha rota | TMS Motorista</title>
+  <link rel="stylesheet" href="/assets/css/styles.css?v=1.0.0-rc1" />
+  <link rel="stylesheet" href="/assets/css/driver.css?v=1.0.0-rc1" />
+</head>
+<body class="driver-app-body">
+  <div id="driverApp" class="driver-app">
+    <header class="driver-header">
+      <div class="driver-identity">
+        <div class="driver-logo" aria-hidden="true">T</div>
+        <div class="driver-identity-text">
+          <small>TMS Motorista</small>
+          <strong id="driverName">Carregando...</strong>
+        </div>
+      </div>
+
+      <div class="driver-header-actions">
+        <span id="networkStatus" class="network-pill" aria-live="polite">
+          <span class="network-dot"></span>
+          Online
+        </span>
+        <span id="gpsHeaderStatus" class="network-pill gps-pill" aria-live="polite">
+          <span class="network-dot"></span>
+          GPS
+        </span>
+        <button id="driverRefreshButton" class="driver-icon-button" type="button" aria-label="Atualizar rota" title="Atualizar rota">
+          ↻
+        </button>
+      </div>
+    </header>
+
+    <main id="driverTop" class="driver-main">
+      <section id="driverLoading" class="driver-loading" aria-live="polite">
+        <span class="driver-loader"></span>
+        <strong>Carregando sua rota...</strong>
+        <small>Aguarde enquanto sincronizamos as informações.</small>
+      </section>
+
+      <div id="driverLoaded" hidden>
+        <section id="noActiveRoute" class="driver-empty-card" hidden>
+          <div class="driver-empty-icon" aria-hidden="true">✓</div>
+          <h1>Nenhuma rota ativa</h1>
+          <p>Quando uma rota for atribuída a você, ela aparecerá automaticamente aqui.</p>
+          <button id="emptyRefreshButton" class="driver-primary-button" type="button">Atualizar agora</button>
+        </section>
+
+        <div id="activeRouteContent" hidden>
+          <section id="routeHero" class="driver-route-hero" aria-labelledby="routeTitle">
+            <div class="driver-route-topline">
+              <span id="routeStatus" class="driver-status-pill">—</span>
+              <span id="routeSchedule" class="driver-route-date">—</span>
+            </div>
+            <h1 id="routeTitle">Minha rota</h1>
+            <p id="routeVehicle" class="driver-route-vehicle">Veículo não informado</p>
+
+            <div class="driver-progress-copy">
+              <span id="routeProgressText">0 de 0 paradas finalizadas</span>
+              <strong id="routeProgressPercent">0%</strong>
+            </div>
+            <div class="driver-progress-track" aria-hidden="true">
+              <span id="routeProgressBar"></span>
+            </div>
+
+            <div class="driver-route-metrics">
+              <div>
+                <small>Paradas</small>
+                <strong id="routeStopsMetric">0</strong>
+              </div>
+              <div>
+                <small>Distância</small>
+                <strong id="routeDistanceMetric">—</strong>
+              </div>
+              <div>
+                <small>Início</small>
+                <strong id="routeStartMetric">—</strong>
+              </div>
+            </div>
+          </section>
+
+          <section id="routeActionPanel" class="driver-action-panel"></section>
+
+          <section id="driverTrackingPanel" class="driver-tracking-panel" hidden>
+            <div class="driver-tracking-copy">
+              <div class="driver-tracking-icon" aria-hidden="true">◎</div>
+              <div>
+                <strong>Rastreamento da viagem</strong>
+                <span id="driverTrackingMessage">O GPS será ativado quando a rota iniciar.</span>
+              </div>
+            </div>
+            <div class="driver-tracking-actions">
+              <span id="driverTrackingLastSent" class="driver-tracking-last">Nenhuma posição enviada</span>
+              <button id="driverTrackingButton" class="driver-secondary-button" type="button">
+                Ativar GPS
+              </button>
+            </div>
+          </section>
+
+          <section id="nextStopSection" class="driver-next-stop" hidden>
+            <div class="driver-section-heading compact">
+              <div>
+                <span class="driver-eyebrow">Próxima parada</span>
+                <h2 id="nextStopCustomer">—</h2>
+              </div>
+              <span id="nextStopSequence" class="driver-sequence-badge">1</span>
+            </div>
+            <p id="nextStopAddress" class="driver-next-address">—</p>
+            <div class="driver-next-actions">
+              <a id="nextStopMapLink" class="driver-secondary-button" href="#" target="_blank" rel="noopener noreferrer">Abrir navegação</a>
+              <button id="nextStopDetailsButton" class="driver-primary-button" type="button">Ver parada</button>
+            </div>
+          </section>
+
+          <section id="otherRoutesSection" class="driver-section" hidden>
+            <div class="driver-section-heading">
+              <div>
+                <span class="driver-eyebrow">Rotas atribuídas</span>
+                <h2>Outras rotas</h2>
+              </div>
+            </div>
+            <div id="otherRoutesList" class="driver-route-switcher"></div>
+          </section>
+
+          <section id="driverStops" class="driver-section driver-stops-section">
+            <div class="driver-section-heading">
+              <div>
+                <span class="driver-eyebrow">Sequência de atendimento</span>
+                <h2>Paradas da rota</h2>
+              </div>
+              <span id="pendingStopsCount" class="driver-count-pill">0 pendentes</span>
+            </div>
+            <div id="driverStopsList" class="driver-stops-list"></div>
+          </section>
+        </div>
+
+        <section id="routeHistorySection" class="driver-section driver-history-section" hidden>
+          <div class="driver-section-heading">
+            <div>
+              <span class="driver-eyebrow">Últimas viagens</span>
+              <h2>Histórico</h2>
+            </div>
+          </div>
+          <div id="routeHistoryList" class="driver-history-list"></div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="driver-bottom-nav" aria-label="Navegação do motorista">
+      <button type="button" data-driver-nav="route" aria-label="Ir para a rota">
+        <span aria-hidden="true">⌂</span>
+        <small>Rota</small>
+      </button>
+      <button type="button" data-driver-nav="stops" aria-label="Ir para as paradas">
+        <span aria-hidden="true">☷</span>
+        <small>Paradas</small>
+      </button>
+      <button id="bottomRefreshButton" type="button" aria-label="Atualizar informações">
+        <span aria-hidden="true">↻</span>
+        <small>Atualizar</small>
+      </button>
+      <button id="driverLogoutButton" type="button" aria-label="Sair do sistema">
+        <span aria-hidden="true">⇥</span>
+        <small>Sair</small>
+      </button>
+    </nav>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script type="module" src="/assets/js/driver.js?v=1.0.0-rc1"></script>
+</body>
+</html>
