@@ -53,3 +53,14 @@
 ## 0.1.1
 
 - Sincronização e idempotência de status de rota.
+
+## 1.0.0-rc1.2 - 2026-10-21
+
+### Segurança
+
+- Atualizado `PyJWT` de `2.13.0` para `2.15.1` para corrigir os alertas identificados pelo `pip-audit` no pipeline de produção.
+- Mantido o uso explícito de algoritmo, emissor, público e claims obrigatórias na validação dos tokens JWT.
+
+### Qualidade
+
+- Adicionada validação específica de emissão e leitura de tokens após a atualização da dependência.
